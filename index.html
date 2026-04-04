@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitroca — If you can imagine it, you can do the unthinkable</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --bg-card: #12121a;
+            --border: #1e1e2e;
+            --text: #c8c8d4;
+            --text-dim: #6e6e82;
+            --heading: #e8e8f0;
+            --accent: #00d4aa;
+            --accent-dim: rgba(0, 212, 170, 0.08);
+            --accent-glow: rgba(0, 212, 170, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'IBM Plex Sans', sans-serif;
+            font-weight: 300;
+            line-height: 1.75;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Grid background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 60px 60px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Top nav */
+        .top-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 56px;
+            background: rgba(10, 10, 15, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 32px;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Chakra Petch', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--heading);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            text-decoration: none;
+        }
+
+        .logo span { color: var(--accent); }
+
+        .nav-links {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+        }
+
+        .nav-link {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            text-decoration: none;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: color 0.2s;
+        }
+
+        .nav-link:hover { color: var(--accent); }
+
+        /* Hero */
+        .hero {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 80px 24px 60px;
+        }
+
+        .hero-badge {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent);
+            border: 1px solid rgba(0, 212, 170, 0.3);
+            background: var(--accent-dim);
+            padding: 6px 16px;
+            border-radius: 999px;
+            margin-bottom: 32px;
+            display: inline-block;
+        }
+
+        .hero-title {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: clamp(3rem, 10vw, 6rem);
+            font-weight: 700;
+            color: var(--heading);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            line-height: 1.05;
+            margin-bottom: 8px;
+        }
+
+        .hero-title span { color: var(--accent); }
+
+        .hero-tagline {
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            color: var(--text-dim);
+            font-weight: 300;
+            margin-bottom: 48px;
+            max-width: 520px;
+            font-style: italic;
+        }
+
+        .hero-tagline em {
+            color: var(--text);
+            font-style: normal;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #0a0a0f;
+            background: var(--accent);
+            border: none;
+            padding: 14px 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: opacity 0.2s, transform 0.2s;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.85;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent);
+            background: transparent;
+            border: 1px solid rgba(0, 212, 170, 0.4);
+            padding: 14px 32px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s, transform 0.2s;
+            display: inline-block;
+        }
+
+        .btn-secondary:hover {
+            background: var(--accent-dim);
+            transform: translateY(-1px);
+        }
+
+        /* Scroll indicator */
+        .scroll-hint {
+            position: absolute;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(6px); }
+        }
+
+        .scroll-hint::after {
+            content: '↓';
+            font-size: 1rem;
+            color: var(--accent);
+        }
+
+        /* Features section */
+        .section {
+            position: relative;
+            z-index: 1;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 80px 24px;
+        }
+
+        .section-label {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-label::before {
+            content: '';
+            width: 24px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        .section-title {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 700;
+            color: var(--heading);
+            margin-bottom: 16px;
+        }
+
+        .section-subtitle {
+            font-size: 0.95rem;
+            color: var(--text-dim);
+            max-width: 540px;
+            margin-bottom: 48px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 28px 24px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(0, 212, 170, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .feature-icon {
+            font-size: 1.8rem;
+            margin-bottom: 14px;
+            display: block;
+        }
+
+        .feature-title {
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--heading);
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            font-size: 0.88rem;
+            color: var(--text-dim);
+            line-height: 1.6;
+        }
+
+        /* Divider */
+        .divider {
+            position: relative;
+            z-index: 1;
+            max-width: 960px;
+            margin: 0 auto;
+            border: none;
+            border-top: 1px solid var(--border);
+        }
+
+        /* CTA section */
+        .cta-section {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            padding: 80px 24px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .cta-section .section-label {
+            justify-content: center;
+        }
+
+        .cta-section .section-label::before { display: none; }
+
+        /* Footer */
+        .footer {
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid var(--border);
+            padding: 32px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+
+        .footer-logo {
+            font-family: 'Chakra Petch', sans-serif;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--heading);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .footer-logo span { color: var(--accent); }
+
+        .footer-links {
+            display: flex;
+            gap: 24px;
+        }
+
+        .footer-link {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-link:hover { color: var(--accent); }
+
+        .footer-copy {
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            width: 100%;
+        }
+
+        @media (max-width: 600px) {
+            .top-bar { padding: 0 18px; }
+            .hero-buttons { flex-direction: column; align-items: center; }
+            .footer { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="top-bar">
+    <a href="/" class="logo">Bit<span>roca</span></a>
+    <div class="nav-links">
+        <a href="#features" class="nav-link">Features</a>
+        <a href="privacy.html" class="nav-link">Privacy</a>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+    <span class="hero-badge">⛏️ Now in Alpha</span>
+    <h1 class="hero-title">Bit<span>roca</span></h1>
+    <p class="hero-tagline">
+        <em>If you can imagine it,</em> you can do the unthinkable.
+    </p>
+    <div class="hero-buttons">
+        <a href="#features" class="btn-primary">Explore the Game</a>
+        <a href="#coming-soon" class="btn-secondary">Coming to Steam</a>
+    </div>
+    <div class="scroll-hint">Scroll</div>
+</section>
+
+<hr class="divider">
+
+<!-- Features -->
+<section class="section" id="features">
+    <div class="section-label">What is Bitroca</div>
+    <h2 class="section-title">Mine. Build. Trade. Rule.</h2>
+    <p class="section-subtitle">A persistent multiplayer world where every block matters and every player leaves their mark.</p>
+
+    <div class="features-grid">
+        <div class="feature-card">
+            <span class="feature-icon">⛏️</span>
+            <div class="feature-title">Mine & Forge</div>
+            <p class="feature-desc">Break blocks, mine resources, and solve Proof-of-Work puzzles to earn FORGE tokens in a live blockchain-inspired economy.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🌍</span>
+            <div class="feature-title">Personal Worlds</div>
+            <p class="feature-desc">Own and build your own persistent world. Set access rules, invite friends, or open it to everyone.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">💰</span>
+            <div class="feature-title">Real Economy</div>
+            <p class="feature-desc">Trade resources and currencies with other players. Buy and sell on the CIPHER market. Every transaction is logged.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🌐</span>
+            <div class="feature-title">Always Online</div>
+            <p class="feature-desc">A live VPS-hosted server means the world keeps going even when you log off. Your progress is always saved.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">🏆</span>
+            <div class="feature-title">Level Up</div>
+            <p class="feature-desc">Progress through pickaxe tiers, unlock new abilities, and climb the ranks as you mine deeper and trade smarter.</p>
+        </div>
+        <div class="feature-card">
+            <span class="feature-icon">💬</span>
+            <div class="feature-title">Multiplayer Chat</div>
+            <p class="feature-desc">Talk to players in your world in real time. See announcements when players forge new blocks or join for the first time.</p>
+        </div>
+    </div>
+</section>
+
+<hr class="divider">
+
+<!-- CTA / Coming Soon -->
+<section class="cta-section" id="coming-soon">
+    <div class="section-label">What's Next</div>
+    <h2 class="section-title">Coming to Steam</h2>
+    <p style="color: var(--text-dim); font-size: 0.95rem; margin-bottom: 32px;">
+        Bitroca is currently in alpha. We're polishing the experience and heading toward a full Steam release. Stay tuned.
+    </p>
+    <a href="https://store.steampowered.com" class="btn-secondary" target="_blank">Steam — Coming Soon</a>
+</section>
+
+<!-- Footer -->
+<footer>
+    <div class="footer" style="border-top: none; padding-top: 0;">
+        <div class="footer-logo">Bit<span>roca</span></div>
+        <div class="footer-links">
+            <a href="privacy.html" class="footer-link">Privacy Policy</a>
+            <a href="mailto:support@bitroca.com" class="footer-link">Contact</a>
+        </div>
+        <p class="footer-copy">© 2026 Bitroca. All rights reserved.</p>
+    </div>
+</footer>
+
+</body>
+</html>
