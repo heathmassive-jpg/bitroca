@@ -705,5 +705,505 @@ document.querySelectorAll('.feat, .stat-item, .economy-card').forEach(el => {
   observer.observe(el);
 });
 </script>
+
+<!-- ════════════════════════════════════════════
+     EDIT MODE  —  visit ?edit=1 to activate
+     ════════════════════════════════════════════ -->
+<style>
+#edit-bar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+  background: #0d0d1c; border-bottom: 1px solid rgba(127,119,221,0.35);
+  display: none; align-items: center; justify-content: space-between;
+  padding: 0 24px; height: 52px; font-family: 'Space Mono', monospace;
+  gap: 16px;
+}
+#edit-bar.active { display: flex; }
+.eb-logo { font-size: 12px; color: #7f77dd; letter-spacing: 0.1em; white-space: nowrap; }
+.eb-logo span { color: #5dcaa5; }
+.eb-tabs { display: flex; gap: 4px; }
+.eb-tab {
+  font-size: 11px; padding: 6px 14px; border-radius: 5px; cursor: pointer;
+  border: 0.5px solid transparent; color: rgba(200,195,255,0.5);
+  background: transparent; font-family: 'Space Mono', monospace;
+  letter-spacing: 0.06em; transition: all 0.15s;
+}
+.eb-tab:hover { color: #c4baff; border-color: rgba(127,119,221,0.3); }
+.eb-tab.on { background: rgba(127,119,221,0.15); border-color: rgba(127,119,221,0.5); color: #c4baff; }
+.eb-actions { display: flex; gap: 8px; align-items: center; }
+.eb-btn {
+  font-size: 11px; padding: 7px 16px; border-radius: 5px; cursor: pointer;
+  font-family: 'Space Mono', monospace; letter-spacing: 0.06em; transition: all 0.15s;
+}
+.eb-btn-ghost { background: transparent; border: 0.5px solid rgba(127,119,221,0.35); color: #a89fff; }
+.eb-btn-ghost:hover { border-color: #7f77dd; color: #c4baff; }
+.eb-btn-primary { background: #534ab7; border: none; color: #e8e6ff; }
+.eb-btn-primary:hover { background: #6259cc; }
+.eb-btn-dl { background: #1d9e75; border: none; color: #e8effb; }
+.eb-btn-dl:hover { background: #28b888; }
+
+/* Panel */
+#edit-panel {
+  position: fixed; right: 0; top: 52px; bottom: 0; width: 360px; z-index: 9998;
+  background: #0a0a12; border-left: 0.5px solid rgba(127,119,221,0.2);
+  overflow-y: auto; display: none; flex-direction: column;
+  font-family: 'Space Mono', monospace;
+}
+#edit-panel.active { display: flex; }
+.ep-section { border-bottom: 0.5px solid rgba(127,119,221,0.12); padding: 20px 20px 16px; }
+.ep-section-title {
+  font-size: 10px; color: rgba(127,119,221,0.7); letter-spacing: 0.14em;
+  margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+}
+.ep-section-title::after { content: ''; flex: 1; height: 0.5px; background: rgba(127,119,221,0.15); }
+.ep-field { margin-bottom: 14px; }
+.ep-label { font-size: 10px; color: rgba(200,195,255,0.45); letter-spacing: 0.08em; margin-bottom: 6px; display: block; }
+.ep-input, .ep-textarea, .ep-select {
+  width: 100%; background: #0d0d1c; border: 0.5px solid rgba(127,119,221,0.25);
+  border-radius: 6px; color: #c4baff; font-family: 'Space Mono', monospace;
+  font-size: 12px; padding: 8px 10px; outline: none; transition: border-color 0.15s;
+}
+.ep-input:focus, .ep-textarea:focus, .ep-select:focus { border-color: #7f77dd; }
+.ep-textarea { resize: vertical; min-height: 68px; line-height: 1.6; }
+.ep-select option { background: #0d0d1c; }
+
+/* Image upload */
+.img-upload-zone {
+  border: 1px dashed rgba(127,119,221,0.3); border-radius: 8px;
+  padding: 20px; text-align: center; cursor: pointer;
+  transition: all 0.2s; position: relative; overflow: hidden;
+}
+.img-upload-zone:hover { border-color: #7f77dd; background: rgba(127,119,221,0.05); }
+.img-upload-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.img-upload-zone .iuz-icon { font-size: 22px; margin-bottom: 8px; }
+.img-upload-zone .iuz-text { font-size: 11px; color: rgba(200,195,255,0.45); line-height: 1.6; }
+.img-preview {
+  width: 100%; border-radius: 6px; margin-top: 10px;
+  border: 0.5px solid rgba(127,119,221,0.2); display: none;
+  max-height: 120px; object-fit: cover;
+}
+
+/* Feature editor */
+.feat-editor-row {
+  background: #0d0d1c; border: 0.5px solid rgba(127,119,221,0.15);
+  border-radius: 7px; padding: 12px; margin-bottom: 10px; cursor: pointer;
+  transition: border-color 0.15s;
+}
+.feat-editor-row:hover { border-color: rgba(127,119,221,0.4); }
+.feat-editor-row.open { border-color: #7f77dd; }
+.feat-editor-row-header { display: flex; align-items: center; justify-content: space-between; }
+.feat-editor-row-title { font-size: 12px; color: #a89fff; }
+.feat-editor-row-chevron { font-size: 10px; color: rgba(200,195,255,0.4); transition: transform 0.2s; }
+.feat-editor-row.open .feat-editor-row-chevron { transform: rotate(180deg); }
+.feat-editor-row-body { display: none; margin-top: 12px; padding-top: 12px; border-top: 0.5px solid rgba(127,119,221,0.12); }
+.feat-editor-row.open .feat-editor-row-body { display: block; }
+
+/* Button editor */
+.btn-editor-row {
+  background: #0d0d1c; border: 0.5px solid rgba(127,119,221,0.15);
+  border-radius: 7px; padding: 14px; margin-bottom: 10px;
+}
+.btn-preview-wrap { margin-top: 10px; }
+
+/* Toast */
+#edit-toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(40px);
+  background: #1d9e75; color: #e8ffef; font-family: 'Space Mono', monospace;
+  font-size: 12px; padding: 10px 22px; border-radius: 8px; z-index: 99999;
+  opacity: 0; transition: all 0.3s; pointer-events: none; letter-spacing: 0.06em;
+}
+#edit-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Push page content when panel open */
+body.edit-open .site-wrap, body.edit-open nav, body.edit-open .ticker-wrap { margin-right: 360px; transition: margin-right 0.3s; }
+</style>
+
+<!-- EDIT BAR -->
+<div id="edit-bar">
+  <div class="eb-logo">⛏ BITROCA <span>EDITOR</span></div>
+  <div class="eb-tabs">
+    <button class="eb-tab on" onclick="switchTab('hero')">Hero</button>
+    <button class="eb-tab" onclick="switchTab('features')">Features</button>
+    <button class="eb-tab" onclick="switchTab('buttons')">Buttons</button>
+    <button class="eb-tab" onclick="switchTab('stats')">Stats</button>
+    <button class="eb-tab" onclick="switchTab('footer')">Footer</button>
+  </div>
+  <div class="eb-actions">
+    <button class="eb-btn eb-btn-ghost" onclick="previewChanges()">Preview</button>
+    <button class="eb-btn eb-btn-primary" onclick="applyAll()">Apply</button>
+    <button class="eb-btn eb-btn-dl" onclick="downloadSite()">⬇ Download HTML</button>
+  </div>
+</div>
+
+<!-- EDIT PANEL -->
+<div id="edit-panel">
+
+  <!-- HERO TAB -->
+  <div class="ep-tab-content" id="tab-hero">
+    <div class="ep-section">
+      <div class="ep-section-title">HERO TEXT</div>
+      <div class="ep-field">
+        <label class="ep-label">HEADLINE LINE 1</label>
+        <input class="ep-input" id="ed-h1-line1" value="Mine." />
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">HEADLINE LINE 2 (accent color)</label>
+        <input class="ep-input" id="ed-h1-line2" value="Build." />
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">HEADLINE LINE 3 (teal color)</label>
+        <input class="ep-input" id="ed-h1-line3" value="Rule." />
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">SUBHEADING</label>
+        <textarea class="ep-textarea" id="ed-hero-sub">A persistent multiplayer world where every block matters and every player leaves their mark.</textarea>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">ALPHA BADGE TEXT</label>
+        <input class="ep-input" id="ed-badge" value="NOW IN ALPHA" />
+      </div>
+    </div>
+    <div class="ep-section">
+      <div class="ep-section-title">HERO BACKGROUND IMAGE</div>
+      <div class="img-upload-zone" id="hero-upload-zone">
+        <input type="file" accept="image/*" id="hero-img-input" onchange="handleImgUpload('hero', this)" />
+        <div class="iuz-icon">🖼</div>
+        <div class="iuz-text">Click or drag an image here<br>Overlays on top of particles</div>
+      </div>
+      <img class="img-preview" id="hero-img-preview" />
+      <div class="ep-field" style="margin-top:10px;">
+        <label class="ep-label">IMAGE OPACITY (0–1)</label>
+        <input class="ep-input" id="hero-img-opacity" type="number" min="0" max="1" step="0.05" value="0.18" />
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">IMAGE POSITION</label>
+        <select class="ep-select" id="hero-img-pos">
+          <option value="center center">Center</option>
+          <option value="top center">Top</option>
+          <option value="bottom center">Bottom</option>
+          <option value="center left">Left</option>
+          <option value="center right">Right</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURES TAB -->
+  <div class="ep-tab-content" id="tab-features" style="display:none">
+    <div class="ep-section">
+      <div class="ep-section-title">SECTION HEADER</div>
+      <div class="ep-field">
+        <label class="ep-label">LABEL (small text above)</label>
+        <input class="ep-input" id="ed-feat-label" value="WHAT IS BITROCA" />
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">TITLE</label>
+        <textarea class="ep-textarea" id="ed-feat-title" style="min-height:52px">Everything you need to build an empire.</textarea>
+      </div>
+      <div class="ep-field">
+        <label class="ep-label">SUBTITLE</label>
+        <input class="ep-input" id="ed-feat-sub" value="One world. Real stakes. A live economy that never sleeps." />
+      </div>
+    </div>
+    <div class="ep-section">
+      <div class="ep-section-title">FEATURE CARDS</div>
+      <div id="feat-cards-editor"></div>
+    </div>
+  </div>
+
+  <!-- BUTTONS TAB -->
+  <div class="ep-tab-content" id="tab-buttons" style="display:none">
+    <div class="ep-section">
+      <div class="ep-section-title">HERO BUTTONS</div>
+      <div class="btn-editor-row">
+        <div class="ep-label">PRIMARY BUTTON</div>
+        <div class="ep-field"><label class="ep-label">TEXT</label><input class="ep-input" id="ed-btn1-text" value="Explore the Game" /></div>
+        <div class="ep-field"><label class="ep-label">LINK / URL</label><input class="ep-input" id="ed-btn1-href" value="#features" /></div>
+      </div>
+      <div class="btn-editor-row">
+        <div class="ep-label">GHOST BUTTON</div>
+        <div class="ep-field"><label class="ep-label">TEXT</label><input class="ep-input" id="ed-btn2-text" value="Coming to Steam" /></div>
+        <div class="ep-field"><label class="ep-label">LINK / URL</label><input class="ep-input" id="ed-btn2-href" value="#coming-soon" /></div>
+      </div>
+    </div>
+    <div class="ep-section">
+      <div class="ep-section-title">NAV BUTTON</div>
+      <div class="btn-editor-row">
+        <div class="ep-field"><label class="ep-label">TEXT</label><input class="ep-input" id="ed-nav-btn-text" value="Play Alpha ↗" /></div>
+        <div class="ep-field"><label class="ep-label">LINK / URL</label><input class="ep-input" id="ed-nav-btn-href" value="#" /></div>
+      </div>
+    </div>
+    <div class="ep-section">
+      <div class="ep-section-title">ECONOMY SECTION BUTTON</div>
+      <div class="btn-editor-row">
+        <div class="ep-field"><label class="ep-label">TEXT</label><input class="ep-input" id="ed-eco-btn-text" value="View Market" /></div>
+        <div class="ep-field"><label class="ep-label">LINK / URL</label><input class="ep-input" id="ed-eco-btn-href" value="#" /></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATS TAB -->
+  <div class="ep-tab-content" id="tab-stats" style="display:none">
+    <div class="ep-section">
+      <div class="ep-section-title">STAT STARTING VALUES</div>
+      <div class="ep-field"><label class="ep-label">BLOCKS MINED (starting number)</label><input class="ep-input" id="ed-stat-blocks" value="1204312" type="number" /></div>
+      <div class="ep-field"><label class="ep-label">ACTIVE WORLDS</label><input class="ep-input" id="ed-stat-worlds" value="89" type="number" /></div>
+      <div class="ep-field"><label class="ep-label">PLAYERS ONLINE</label><input class="ep-input" id="ed-stat-players" value="312" type="number" /></div>
+      <div class="ep-field"><label class="ep-label">TRANSACTIONS LOGGED</label><input class="ep-input" id="ed-stat-txns" value="48230" type="number" /></div>
+    </div>
+    <div class="ep-section">
+      <div class="ep-section-title">STAT LABELS</div>
+      <div class="ep-field"><label class="ep-label">LABEL 1</label><input class="ep-input" id="ed-stat-lbl1" value="BLOCKS MINED" /></div>
+      <div class="ep-field"><label class="ep-label">LABEL 2</label><input class="ep-input" id="ed-stat-lbl2" value="ACTIVE WORLDS" /></div>
+      <div class="ep-field"><label class="ep-label">LABEL 3</label><input class="ep-input" id="ed-stat-lbl3" value="PLAYERS ONLINE" /></div>
+      <div class="ep-field"><label class="ep-label">LABEL 4</label><input class="ep-input" id="ed-stat-lbl4" value="TRANSACTIONS LOGGED" /></div>
+    </div>
+  </div>
+
+  <!-- FOOTER TAB -->
+  <div class="ep-tab-content" id="tab-footer" style="display:none">
+    <div class="ep-section">
+      <div class="ep-section-title">FOOTER</div>
+      <div class="ep-field"><label class="ep-label">COPYRIGHT TEXT</label><input class="ep-input" id="ed-footer-copy" value="© 2026 Bitroca. All rights reserved." /></div>
+      <div class="ep-field"><label class="ep-label">CONTACT EMAIL</label><input class="ep-input" id="ed-contact-email" value="support@bitroca.com" /></div>
+    </div>
+    <div class="ep-section">
+      <div class="ep-section-title">COMING SOON SECTION</div>
+      <div class="ep-field"><label class="ep-label">TITLE</label><input class="ep-input" id="ed-steam-title" value="Coming to Steam." /></div>
+      <div class="ep-field"><label class="ep-label">DESCRIPTION</label><textarea class="ep-textarea" id="ed-steam-desc">Bitroca is currently in alpha. We're polishing the experience and heading toward a full Steam release. Stay tuned — it's going to be something else.</textarea></div>
+    </div>
+  </div>
+
+</div>
+
+<div id="edit-toast">Changes applied!</div>
+
+<script>
+/* ── EDIT MODE ENGINE ── */
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  if (!params.get('edit')) return;
+
+  document.getElementById('edit-bar').classList.add('active');
+  document.getElementById('edit-panel').classList.add('active');
+  document.body.classList.add('edit-open');
+  document.body.style.paddingTop = '52px';
+
+  // Build feature card editors
+  const feats = document.querySelectorAll('.feat');
+  const container = document.getElementById('feat-cards-editor');
+  feats.forEach((f, i) => {
+    const h3 = f.querySelector('h3');
+    const p = f.querySelector('p');
+    const icon = f.querySelector('.feat-icon');
+    const row = document.createElement('div');
+    row.className = 'feat-editor-row';
+    row.innerHTML = `
+      <div class="feat-editor-row-header" onclick="toggleFeatRow(this)">
+        <span class="feat-editor-row-title">${icon ? icon.textContent : ''} ${h3 ? h3.textContent : 'Feature '+(i+1)}</span>
+        <span class="feat-editor-row-chevron">▼</span>
+      </div>
+      <div class="feat-editor-row-body">
+        <div class="ep-field"><label class="ep-label">ICON (emoji)</label>
+          <input class="ep-input feat-icon-input" data-idx="${i}" value="${icon ? icon.textContent.trim() : '⛏️'}" /></div>
+        <div class="ep-field"><label class="ep-label">TITLE</label>
+          <input class="ep-input feat-title-input" data-idx="${i}" value="${h3 ? h3.textContent : ''}" /></div>
+        <div class="ep-field"><label class="ep-label">DESCRIPTION</label>
+          <textarea class="ep-textarea feat-desc-input" data-idx="${i}">${p ? p.textContent : ''}</textarea></div>
+      </div>`;
+    container.appendChild(row);
+  });
+
+  window.toggleFeatRow = function(header) {
+    header.parentElement.classList.toggle('open');
+  };
+})();
+
+window.switchTab = function(tab) {
+  document.querySelectorAll('.ep-tab-content').forEach(t => t.style.display = 'none');
+  document.querySelectorAll('.eb-tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('tab-' + tab).style.display = 'block';
+  event.target.classList.add('on');
+};
+
+// Image upload handling
+let heroImgDataUrl = null;
+window.handleImgUpload = function(section, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    if (section === 'hero') {
+      heroImgDataUrl = e.target.result;
+      const prev = document.getElementById('hero-img-preview');
+      prev.src = e.target.result;
+      prev.style.display = 'block';
+      applyHeroImage();
+    }
+  };
+  reader.readAsDataURL(file);
+};
+
+function applyHeroImage() {
+  const hero = document.querySelector('.hero');
+  if (!heroImgDataUrl) return;
+  const opacity = parseFloat(document.getElementById('hero-img-opacity').value) || 0.18;
+  const pos = document.getElementById('hero-img-pos').value || 'center center';
+  hero.style.backgroundImage = `url('${heroImgDataUrl}')`;
+  hero.style.backgroundSize = 'cover';
+  hero.style.backgroundPosition = pos;
+  // create overlay element if not exists
+  let overlay = document.getElementById('hero-img-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'hero-img-overlay';
+    overlay.style.cssText = `position:absolute;inset:0;z-index:1;pointer-events:none;`;
+    hero.prepend(overlay);
+  }
+  overlay.style.background = `rgba(7,7,15,${1 - opacity})`;
+}
+
+window.previewChanges = function() {
+  applyAll(true);
+};
+
+window.applyAll = function(silent) {
+  // Hero text
+  const h1 = document.querySelector('.hero h1');
+  if (h1) {
+    const l1 = document.getElementById('ed-h1-line1').value;
+    const l2 = document.getElementById('ed-h1-line2').value;
+    const l3 = document.getElementById('ed-h1-line3').value;
+    h1.innerHTML = `${escHtml(l1)}<br><span class="accent">${escHtml(l2)}</span><br><span class="accent2">${escHtml(l3)}</span>`;
+  }
+  const sub = document.querySelector('.hero-sub');
+  if (sub) sub.textContent = document.getElementById('ed-hero-sub').value;
+  const badge = document.querySelector('.alpha-badge');
+  if (badge) {
+    const dot = badge.querySelector('.alpha-dot');
+    badge.textContent = document.getElementById('ed-badge').value;
+    if (dot) badge.prepend(dot);
+  }
+
+  // Features section header
+  const featLabel = document.querySelector('.features .section-label');
+  const featTitle = document.querySelector('.features .section-title');
+  const featSub = document.querySelector('.features .section-sub');
+  if (featLabel) featLabel.textContent = document.getElementById('ed-feat-label').value;
+  if (featTitle) featTitle.textContent = document.getElementById('ed-feat-title').value;
+  if (featSub) featSub.textContent = document.getElementById('ed-feat-sub').value;
+
+  // Feature cards
+  document.querySelectorAll('.feat-icon-input').forEach(inp => {
+    const i = parseInt(inp.dataset.idx);
+    const feat = document.querySelectorAll('.feat')[i];
+    if (!feat) return;
+    const icon = feat.querySelector('.feat-icon');
+    const h3 = feat.querySelector('h3');
+    const p = feat.querySelector('p');
+    if (icon) icon.textContent = inp.value;
+    const titleInp = document.querySelector(`.feat-title-input[data-idx="${i}"]`);
+    const descInp = document.querySelector(`.feat-desc-input[data-idx="${i}"]`);
+    if (h3 && titleInp) h3.textContent = titleInp.value;
+    if (p && descInp) p.textContent = descInp.value;
+  });
+
+  // Buttons
+  const btns = document.querySelectorAll('.hero-buttons a');
+  if (btns[0]) { btns[0].textContent = document.getElementById('ed-btn1-text').value; btns[0].href = document.getElementById('ed-btn1-href').value; }
+  if (btns[1]) { btns[1].textContent = document.getElementById('ed-btn2-text').value; btns[1].href = document.getElementById('ed-btn2-href').value; }
+  const navBtn = document.querySelector('.nav-btn');
+  if (navBtn) { navBtn.textContent = document.getElementById('ed-nav-btn-text').value; navBtn.href = document.getElementById('ed-nav-btn-href').value; }
+  const ecoBtn = document.querySelector('.economy .btn-primary');
+  if (ecoBtn) { ecoBtn.textContent = document.getElementById('ed-eco-btn-text').value; ecoBtn.href = document.getElementById('ed-eco-btn-href').value; }
+
+  // Stats labels
+  const statLbls = document.querySelectorAll('.stat-lbl');
+  ['ed-stat-lbl1','ed-stat-lbl2','ed-stat-lbl3','ed-stat-lbl4'].forEach((id, i) => {
+    if (statLbls[i]) statLbls[i].textContent = document.getElementById(id).value;
+  });
+
+  // Stats starting values
+  blockCount = parseInt(document.getElementById('ed-stat-blocks').value) || blockCount;
+  playerCount = parseInt(document.getElementById('ed-stat-players').value) || playerCount;
+  txnCount = parseInt(document.getElementById('ed-stat-txns').value) || txnCount;
+  worldCount = parseInt(document.getElementById('ed-stat-worlds').value) || worldCount;
+  document.getElementById('s-blocks').textContent = blockCount.toLocaleString();
+  document.getElementById('s-players').textContent = playerCount.toLocaleString();
+  document.getElementById('s-txns').textContent = txnCount.toLocaleString();
+  document.getElementById('s-worlds').textContent = worldCount.toLocaleString();
+
+  // Footer
+  const copy = document.querySelector('.footer-copy');
+  if (copy) copy.textContent = document.getElementById('ed-footer-copy').value;
+  const emailLink = document.querySelector('.footer-links a[href^="mailto"]');
+  const email = document.getElementById('ed-contact-email').value;
+  if (emailLink) { emailLink.href = 'mailto:' + email; emailLink.textContent = 'Contact'; }
+
+  // Coming soon
+  const steamTitle = document.querySelector('.steam .section-title');
+  const steamDesc = document.querySelector('.steam .section-sub');
+  if (steamTitle) steamTitle.textContent = document.getElementById('ed-steam-title').value;
+  if (steamDesc) steamDesc.textContent = document.getElementById('ed-steam-desc').value;
+
+  // Hero image
+  if (heroImgDataUrl) applyHeroImage();
+
+  if (!silent) toast('Changes applied!');
+};
+
+window.downloadSite = function() {
+  applyAll(true);
+
+  // Grab current DOM state of page (exclude editor UI)
+  const edBar = document.getElementById('edit-bar');
+  const edPanel = document.getElementById('edit-panel');
+  const edToast = document.getElementById('edit-toast');
+  const edStyles = document.querySelector('style:last-of-type');
+
+  // Temporarily hide editor elements
+  edBar.style.display = 'none';
+  edPanel.style.display = 'none';
+  edToast.style.display = 'none';
+  document.body.style.paddingTop = '';
+  document.body.classList.remove('edit-open');
+  document.querySelectorAll('[style*="margin-right: 360px"]').forEach(el => el.style.marginRight = '');
+
+  // Get the full HTML
+  const doctype = '<!DOCTYPE html>\n';
+  let html = doctype + document.documentElement.outerHTML;
+
+  // Strip edit-mode script block (everything after the edit mode comment)
+  html = html.replace(/<!-- ═+\s*EDIT MODE[\s\S]*$/, '</body>\n</html>');
+
+  // Re-show editor
+  setTimeout(() => {
+    edBar.style.display = 'flex';
+    edPanel.style.display = 'flex';
+    edToast.style.display = '';
+    document.body.style.paddingTop = '52px';
+    document.body.classList.add('edit-open');
+  }, 100);
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'index.html';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Downloaded index.html!');
+};
+
+function toast(msg) {
+  const t = document.getElementById('edit-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
 </body>
 </html>
