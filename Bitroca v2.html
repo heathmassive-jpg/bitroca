@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bitroca — The world is yours to break.</title>
+<meta name="description" content="A persistent multiplayer voxel world with a live economy. Closed beta 2026." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=JetBrains+Mono:wght@300;400;500;700&family=VT323&display=swap" rel="stylesheet" />
+<style>
+/* ─────────────────────────────────────────────────────────────────
+   BITROCA · v2
+   DNA preserved: deep indigo/violet + teal + mono ticker.
+   Direction: Bloomberg-meets-voxel, a trading-terminal for a game world.
+   Tweakable via in-page panel.
+   ───────────────────────────────────────────────────────────────── */
+
+:root {
+  /*EDITMODE-BEGIN*/
+  --accent-hue: 250;
+  --tone: 0;
+  /*EDITMODE-END*/
+}
+
+* , *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  /* palette */
+  --bg:        #07070f;
+  --bg2:       #0b0b18;
+  --bg3:       #11112a;
+  --bg4:       #171735;
+  --line:      rgba(127,119,221,0.14);
+  --line-2:    rgba(127,119,221,0.28);
+  --violet:    #7f77dd;
+  --violet-l:  #a89fff;
+  --violet-ll: #c9c1ff;
+  --violet-d:  #4b42a8;
+  --teal:      #1d9e75;
+  --teal-l:    #6ed3ad;
+  --amber:     #f0b84a;
+  --red:       #e24b4a;
+  --text:      #e8e6ff;
+  --muted:     rgba(200,195,255,0.5);
+  --muted-2:   rgba(200,195,255,0.28);
+
+  --font-d:    'Syne', sans-serif;
+  --font-m:    'JetBrains Mono', ui-monospace, monospace;
+  --font-px:   'VT323', monospace;
+}
+
+html { scroll-behavior:smooth; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:var(--font-d);
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* subtle grid + noise */
+body::before {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(127,119,221,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(127,119,221,0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+body::after {
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/></svg>");
+  opacity: 0.03; mix-blend-mode:overlay;
+}
+
+/* ─────────── TICKER ─────────── */
+.ticker-wrap {
+  position:relative; z-index:20;
+  height:30px;
+  background:linear-gradient(180deg, #05050c, #0a0a18);
+  border-bottom:1px solid var(--line);
+  display:flex; align-items:center; overflow:hidden;
+}
+.ticker-track { display:flex; white-space:nowrap; animation:tk 80s linear infinite; }
+.ticker-track:hover { animation-play-state:paused; }
+@keyframes tk { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.tick {
+  display:inline-flex; align-items:center; gap:10px;
+  padding:0 20px; border-right:1px solid var(--line);
+  font-family:var(--font-m); font-size:10.5px; font-weight:500;
+  letter-spacing:0.02em;
+}
+.tick .s { color:var(--muted); }
+.tick .v { color:var(--violet-ll); font-weight:700; }
+.tick .up { color:var(--teal-l); }
+.tick .dn { color:var(--red); }
+
+/* ─────────── NAV ─────────── */
+nav.top {
+  position:sticky; top:0; z-index:50;
+  display:grid; grid-template-columns: 1fr auto 1fr;
+  align-items:center; gap:24px;
+  height:64px; padding:0 28px;
+  background:rgba(7,7,15,0.82);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+}
+.logo {
+  display:inline-flex; align-items:center; gap:10px;
+  font-family:var(--font-d); font-weight:800; font-size:18px;
+  letter-spacing:-0.01em; color:var(--violet-ll); text-decoration:none;
+}
+.logo img {
+  height: 32px; width:auto; display:block;
+  filter: drop-shadow(0 2px 8px rgba(240,184,74,0.25));
+}
+.logo-mark {
+  width:22px; height:22px; display:grid; grid-template:repeat(3,1fr)/repeat(3,1fr);
+  gap:1px;
+}
+.logo-mark i {
+  background:var(--violet-d); display:block;
+}
+.logo-mark i:nth-child(1),
+.logo-mark i:nth-child(5),
+.logo-mark i:nth-child(9) { background:var(--violet-l); }
+.logo-mark i:nth-child(3) { background:var(--teal-l); }
+.logo em { font-style:normal; color:var(--violet); }
+
+.nav-links { display:flex; align-items:center; gap:28px; justify-content:center; }
+.nav-links a {
+  font-family:var(--font-m); font-size:11.5px; font-weight:500;
+  color:var(--muted); text-decoration:none;
+  letter-spacing:0.06em; text-transform:uppercase;
+}
+.nav-links a:hover { color:var(--violet-l); }
+
+.nav-right { display:flex; justify-content:flex-end; align-items:center; gap:10px; }
+.pill {
+  font-family:var(--font-m); font-size:10.5px; color:var(--teal-l);
+  border:1px solid rgba(110,211,173,0.3);
+  background:rgba(29,158,117,0.06);
+  padding:6px 10px; border-radius:4px;
+  display:inline-flex; align-items:center; gap:6px;
+  letter-spacing:0.08em; text-transform:uppercase;
+}
+.pill::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--teal-l); animation:blink 1.6s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+.btn {
+  font-family:var(--font-m); font-size:11.5px; font-weight:700;
+  padding:10px 18px; border-radius:6px; cursor:pointer;
+  letter-spacing:0.05em; text-transform:uppercase; text-decoration:none;
+  display:inline-flex; align-items:center; gap:8px;
+  border:1px solid transparent; transition:all .2s;
+  background:transparent; color:var(--text);
+}
+.btn-primary { background:var(--violet-d); color:#fff; }
+.btn-primary:hover { background:#5b52c8; box-shadow:0 6px 24px rgba(75,66,168,0.4); }
+.btn-ghost { border-color:rgba(127,119,221,0.35); color:var(--violet-l); }
+.btn-ghost:hover { border-color:var(--violet-l); color:var(--text); background:rgba(127,119,221,0.08); }
+
+/* ─────────── LAYOUT HELPERS ─────────── */
+.wrap { max-width:1400px; margin:0 auto; padding:0 28px; position:relative; z-index:1; }
+.rule {
+  height:1px; background:var(--line); width:100%;
+}
+.kicker {
+  font-family:var(--font-m); font-size:10.5px; letter-spacing:0.22em;
+  text-transform:uppercase; color:var(--violet);
+  display:inline-flex; align-items:center; gap:10px;
+}
+.kicker::before { content:''; width:22px; height:1px; background:var(--violet); }
+.h-display {
+  font-family:var(--font-d); font-weight:800;
+  font-size:clamp(40px, 6vw, 72px); line-height:0.98;
+  letter-spacing:-0.035em;
+}
+.h-section {
+  font-family:var(--font-d); font-weight:800;
+  font-size:clamp(30px, 4vw, 46px); line-height:1.03;
+  letter-spacing:-0.03em;
+}
+.lede {
+  font-family:var(--font-m); font-size:13.5px; color:var(--muted); line-height:1.75;
+  max-width:520px;
+}
+
+/* ─────────── HERO ─────────── */
+.hero {
+  position:relative;
+  border-bottom:1px solid var(--line);
+  overflow:hidden;
+}
+.hero-grid {
+  display:grid; grid-template-columns: 1.05fr 1fr;
+  min-height: 640px;
+}
+.hero-left {
+  padding: 68px 28px 56px 48px;
+  border-right:1px solid var(--line);
+  display:flex; flex-direction:column; justify-content:center;
+  position:relative;
+}
+.hero-left::before {
+  /* corner tick */
+  content:''; position:absolute; top:20px; left:20px;
+  width:14px; height:14px;
+  border-top:1px solid var(--line-2); border-left:1px solid var(--line-2);
+}
+.hero-left::after {
+  content:''; position:absolute; bottom:20px; left:20px;
+  width:14px; height:14px;
+  border-bottom:1px solid var(--line-2); border-left:1px solid var(--line-2);
+}
+.hero-badge {
+  display:inline-flex; align-items:center; gap:10px;
+  font-family:var(--font-m); font-size:10.5px;
+  letter-spacing:0.18em; text-transform:uppercase;
+  color:var(--violet-l);
+  border:1px solid rgba(127,119,221,0.35);
+  background:rgba(127,119,221,0.07);
+  padding:6px 12px; border-radius:4px;
+  margin-bottom:22px; align-self:flex-start;
+}
+.hero-badge .dot { width:6px; height:6px; border-radius:50%; background:var(--amber); box-shadow:0 0 10px var(--amber); animation:blink 1.6s infinite; }
+
+.hero h1 {
+  font-family:var(--font-d); font-weight:800;
+  font-size: clamp(52px, 7.2vw, 104px);
+  line-height:0.92; letter-spacing:-0.045em;
+  margin-bottom:26px;
+}
+.hero h1 .a { color:var(--violet); }
+.hero h1 .b { color:var(--teal-l); }
+.hero h1 .slash {
+  display:inline-block; width:0.35em; text-align:center;
+  color:var(--muted-2); font-weight:500;
+}
+
+.hero-sub {
+  font-family:var(--font-m); font-size:14.5px; color:var(--muted);
+  line-height:1.7; max-width:460px; margin-bottom:34px;
+}
+
+.hero-ctas { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:36px; }
+
+.hero-meta {
+  display:grid; grid-template-columns: repeat(3, minmax(0,1fr));
+  gap:0; border:1px solid var(--line); border-radius:6px; overflow:hidden;
+  max-width:540px;
+}
+.hero-meta > div { padding:12px 14px; border-right:1px solid var(--line); }
+.hero-meta > div:last-child { border-right:none; }
+.hero-meta .l { font-family:var(--font-m); font-size:10px; color:var(--muted); letter-spacing:0.1em; text-transform:uppercase; }
+.hero-meta .v { font-family:var(--font-d); font-size:22px; font-weight:800; color:var(--violet-ll); margin-top:4px; }
+.hero-meta .v .delta { font-family:var(--font-m); font-size:10px; font-weight:500; margin-left:6px; color:var(--teal-l); }
+
+/* ─ right side: live voxel demo ─ */
+.hero-right {
+  position:relative;
+  background:
+    radial-gradient(circle at 70% 40%, rgba(127,119,221,0.12), transparent 60%),
+    linear-gradient(180deg, #0a0a1a, #06060f);
+  display:flex; flex-direction:column;
+}
+.demo-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 16px; border-bottom:1px solid var(--line);
+  background:rgba(127,119,221,0.03);
+}
+.demo-title {
+  font-family:var(--font-m); font-size:10.5px;
+  letter-spacing:0.18em; text-transform:uppercase; color:var(--muted);
+}
+.demo-title b { color:var(--violet-ll); margin-right:10px; }
+.demo-stats { display:flex; gap:14px; font-family:var(--font-m); font-size:10.5px; color:var(--muted); }
+.demo-stats span b { color:var(--teal-l); margin-left:4px; }
+
+.demo-stage {
+  flex:1; position:relative;
+  display:flex; align-items:center; justify-content:center;
+  padding:24px; cursor:crosshair;
+  min-height: 380px;
+}
+.demo-stage svg { width:100%; height:100%; max-width:520px; display:block; }
+.demo-hint {
+  position:absolute; bottom:14px; left:16px;
+  font-family:var(--font-m); font-size:10.5px; color:var(--muted-2);
+  letter-spacing:0.08em;
+}
+.demo-hint b { color:var(--violet-l); }
+.demo-reward {
+  position:absolute; top:14px; right:16px;
+  font-family:var(--font-m); font-size:10.5px; color:var(--muted);
+  letter-spacing:0.08em;
+}
+.demo-reward b { color:var(--amber); font-weight:700; }
+
+.block-voxel { cursor:pointer; transition:transform .08s; }
+.block-voxel:hover { filter:brightness(1.15); }
+.block-voxel.breaking { animation:shake 0.2s; }
+@keyframes shake {
+  0%,100%{transform:translate(0,0)}
+  25%{transform:translate(-1px,1px)}
+  50%{transform:translate(1px,-1px)}
+  75%{transform:translate(-1px,0)}
+}
+@keyframes pop {
+  0% { opacity:0; transform:translate(0,0) scale(0.6); }
+  40% { opacity:1; transform:translate(0,-14px) scale(1.1); }
+  100% { opacity:0; transform:translate(0,-28px) scale(0.9); }
+}
+.floater {
+  font-family:var(--font-m); font-size:12px; font-weight:700;
+  fill:var(--amber);
+  animation:pop 900ms ease-out forwards;
+}
+
+/* ─────────── STATS STRIP ─────────── */
+.stats {
+  display:grid; grid-template-columns:repeat(5, minmax(0,1fr));
+  border-bottom:1px solid var(--line);
+  background:var(--bg2);
+}
+.stat {
+  padding:22px 24px; border-right:1px solid var(--line);
+  position:relative;
+}
+.stat:last-child { border-right:none; }
+.stat .lbl { font-family:var(--font-m); font-size:10px; letter-spacing:0.14em; color:var(--muted); text-transform:uppercase; }
+.stat .num { font-family:var(--font-d); font-weight:800; font-size:26px; color:var(--violet-ll); letter-spacing:-0.02em; margin-top:8px; }
+.stat .spark { margin-top:8px; height:22px; width:100%; }
+
+/* ─────────── FEATURES (terminal cards) ─────────── */
+.features { padding: 88px 0 96px; }
+.features-head {
+  display:grid; grid-template-columns: 1fr 1fr; gap:40px; align-items:end;
+  margin-bottom:42px; padding: 0 28px;
+}
+.features-grid {
+  display:grid; grid-template-columns:repeat(3, minmax(0,1fr));
+  border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+}
+.feat {
+  padding:28px 28px 30px; border-right:1px solid var(--line);
+  position:relative; min-height:240px;
+  transition:background .2s;
+}
+.feat:nth-child(3n) { border-right:none; }
+.feat:nth-child(n+4) { border-top:1px solid var(--line); }
+.feat:hover { background:rgba(127,119,221,0.04); }
+.feat-head {
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:var(--font-m); font-size:10.5px; color:var(--muted-2);
+  letter-spacing:0.1em; margin-bottom:18px;
+}
+.feat-head .id { color:var(--violet); }
+.feat-ico {
+  width:44px; height:44px; display:grid; grid-template:repeat(4,1fr)/repeat(4,1fr); gap:1px;
+  margin-bottom:16px;
+}
+.feat-ico i { background:transparent; }
+.feat h3 {
+  font-family:var(--font-d); font-weight:700; font-size:20px;
+  color:var(--violet-ll); margin-bottom:8px; letter-spacing:-0.01em;
+}
+.feat p { font-family:var(--font-m); font-size:12.5px; color:var(--muted); line-height:1.7; }
+.feat-tag {
+  margin-top:14px; font-family:var(--font-m); font-size:10px; color:var(--teal-l);
+  letter-spacing:0.1em;
+}
+
+/* ─────────── MARKET TERMINAL ─────────── */
+.market { padding:92px 0 96px; border-top:1px solid var(--line); background:linear-gradient(180deg, #080814, #06060f); }
+.market-inner {
+  display:grid; grid-template-columns: 1fr 1.25fr; gap:56px;
+  align-items:start; padding: 0 28px;
+}
+.market-chart {
+  border:1px solid var(--line); border-radius:6px;
+  background:rgba(127,119,221,0.03); overflow:hidden;
+}
+.mc-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 18px; border-bottom:1px solid var(--line);
+  font-family:var(--font-m);
+}
+.mc-head .l { font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); }
+.mc-head .r { display:flex; gap:6px; }
+.mc-head .tab {
+  font-family:var(--font-m); font-size:10.5px; padding:3px 8px;
+  border:1px solid var(--line-2); border-radius:3px; color:var(--muted);
+  cursor:pointer; letter-spacing:0.06em;
+}
+.mc-head .tab.on { color:var(--text); border-color:var(--violet-l); background:rgba(127,119,221,0.08); }
+
+.mc-body { padding:16px; display:grid; grid-template-columns: 1.3fr 1fr; gap:16px; }
+.mc-plot { position:relative; }
+.mc-plot svg { width:100%; height:240px; display:block; }
+.mc-ticker {
+  font-family:var(--font-m); font-size:11px; color:var(--muted);
+  display:grid; grid-template-rows:repeat(4, auto); gap:8px;
+}
+.mc-ticker .row { display:flex; justify-content:space-between; border-bottom:1px dashed var(--line); padding:6px 0; }
+.mc-ticker .row b { color:var(--violet-ll); font-weight:700; }
+.mc-ticker .row .up { color:var(--teal-l); }
+.mc-ticker .row .dn { color:var(--red); }
+
+.orderbook {
+  border:1px solid var(--line); border-radius:6px;
+  background:rgba(127,119,221,0.03);
+  font-family:var(--font-m); overflow:hidden;
+}
+.ob-head { padding:14px 18px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; font-size:10.5px; letter-spacing:0.16em; text-transform:uppercase; color:var(--muted); }
+.ob-rows { display:grid; grid-template-columns: 1fr 1fr 1fr; padding:8px 18px 4px; font-size:10px; color:var(--muted-2); letter-spacing:0.08em; text-transform:uppercase; }
+.ob-body { padding: 2px 0 12px; }
+.ob-row {
+  display:grid; grid-template-columns: 1fr 1fr 1fr;
+  padding:6px 18px; font-size:11.5px; position:relative;
+}
+.ob-row::before {
+  content:''; position:absolute; inset:0 auto 0 0; width:var(--w, 0%);
+  background:var(--bar, rgba(226,75,74,0.12));
+  z-index:0;
+}
+.ob-row > * { position:relative; z-index:1; }
+.ob-row.bid { color:var(--teal-l); }
+.ob-row.bid::before { background:rgba(110,211,173,0.12); }
+.ob-row.ask { color:var(--red); }
+.ob-spread {
+  font-family:var(--font-m); font-size:10.5px; color:var(--amber);
+  padding:8px 18px; border-top:1px dashed var(--line); border-bottom:1px dashed var(--line);
+  display:flex; justify-content:space-between;
+}
+
+/* ─────────── DEVLOG ─────────── */
+.devlog { padding: 92px 0 96px; border-top:1px solid var(--line); }
+.devlog-head { padding: 0 28px; display:grid; grid-template-columns: 1fr 1fr; gap:32px; align-items:end; margin-bottom:34px; }
+.devlog-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.log {
+  padding:26px 28px 28px; border-right:1px solid var(--line);
+  display:flex; flex-direction:column; gap:12px;
+}
+.log:last-child { border-right:none; }
+.log .row { display:flex; justify-content:space-between; font-family:var(--font-m); font-size:10.5px; letter-spacing:0.1em; color:var(--muted); text-transform:uppercase; }
+.log .row .tag { padding:2px 8px; border:1px solid var(--line-2); border-radius:3px; font-size:10px; }
+.log .row .tag.patch { color:var(--teal-l); border-color:rgba(110,211,173,0.35); }
+.log .row .tag.feat  { color:var(--violet-l); border-color:rgba(127,119,221,0.4); }
+.log .row .tag.fix   { color:var(--amber); border-color:rgba(240,184,74,0.35); }
+.log h4 { font-family:var(--font-d); font-weight:700; font-size:18px; color:var(--text); letter-spacing:-0.015em; }
+.log p { font-family:var(--font-m); font-size:12.5px; color:var(--muted); line-height:1.7; }
+.log ul { list-style:none; font-family:var(--font-m); font-size:12px; color:var(--muted); }
+.log ul li { padding-left:16px; position:relative; margin-bottom:4px; line-height:1.6; }
+.log ul li::before { content:'+'; position:absolute; left:0; color:var(--teal-l); }
+.log ul li.rm::before { content:'−'; color:var(--red); }
+
+/* ─────────── WAITLIST ─────────── */
+.wait { padding: 120px 0 140px; border-top:1px solid var(--line); position:relative; overflow:hidden; }
+.wait::before {
+  content:''; position:absolute; inset:0;
+  background:
+    radial-gradient(circle at 20% 80%, rgba(127,119,221,0.14), transparent 50%),
+    radial-gradient(circle at 80% 10%, rgba(110,211,173,0.08), transparent 50%);
+  pointer-events:none;
+}
+.wait-inner { position:relative; max-width:880px; margin:0 auto; text-align:center; padding:0 28px; }
+.wait-title { font-size: clamp(44px, 6vw, 78px); letter-spacing:-0.04em; line-height:0.96; margin-bottom:22px; font-weight:800; font-family:var(--font-d); }
+.wait-title .pipe { color:var(--violet); }
+.wait-sub { font-family:var(--font-m); font-size:14px; color:var(--muted); line-height:1.7; margin:0 auto 38px; max-width:560px; }
+.wait-form {
+  display:flex; gap:0; align-items:stretch; max-width:520px; margin:0 auto 14px;
+  border:1px solid var(--line-2); border-radius:8px; overflow:hidden;
+  background:rgba(127,119,221,0.04);
+}
+.wait-form input {
+  flex:1; padding:14px 18px; background:transparent; border:none; outline:none;
+  font-family:var(--font-m); font-size:13px; color:var(--text);
+}
+.wait-form input::placeholder { color:var(--muted-2); }
+.wait-form button {
+  padding:0 24px; background:var(--violet-d); border:none;
+  font-family:var(--font-m); font-size:11.5px; font-weight:700; color:#fff;
+  letter-spacing:0.08em; text-transform:uppercase; cursor:pointer;
+  transition:background .2s;
+}
+.wait-form button:hover { background:#5b52c8; }
+.wait-note { font-family:var(--font-m); font-size:11px; color:var(--muted-2); letter-spacing:0.04em; }
+.wait-counter {
+  display:inline-flex; gap:10px; align-items:center;
+  font-family:var(--font-m); font-size:11px; color:var(--muted);
+  margin-top:24px; padding:8px 14px; border:1px solid var(--line-2); border-radius:40px;
+}
+.wait-counter b { color:var(--violet-l); font-weight:700; }
+.wait-counter .d { width:5px; height:5px; border-radius:50%; background:var(--teal-l); animation:blink 1.6s infinite; }
+
+/* ─────────── FOOTER ─────────── */
+footer {
+  border-top:1px solid var(--line); background:var(--bg2);
+  padding: 48px 28px 36px;
+  display:grid; grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr; gap:40px;
+  font-family:var(--font-m);
+}
+footer h5 { font-family:var(--font-m); font-size:10.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:16px; font-weight:500; }
+footer ul { list-style:none; display:flex; flex-direction:column; gap:10px; }
+footer a { color:var(--violet-l); text-decoration:none; font-size:12px; }
+footer a:hover { color:var(--text); }
+.foot-brand .logo { font-size:16px; margin-bottom:14px; }
+.foot-brand p { font-size:12px; color:var(--muted); line-height:1.7; max-width:260px; }
+.foot-bottom {
+  grid-column: 1/-1; margin-top:24px; padding-top:20px;
+  border-top:1px solid var(--line);
+  display:flex; justify-content:space-between; font-size:11px; color:var(--muted);
+}
+
+/* ─────────── TWEAKS PANEL ─────────── */
+#tweaks {
+  position:fixed; right:20px; bottom:20px; z-index:200;
+  width:260px; padding:16px; border-radius:10px;
+  background:rgba(11,11,24,0.94); border:1px solid var(--line-2);
+  backdrop-filter:blur(14px);
+  font-family:var(--font-m); font-size:11px; color:var(--text);
+  box-shadow:0 20px 60px rgba(0,0,0,0.55);
+  display:none; /* toggled on by host */
+}
+#tweaks.open { display:block; }
+#tweaks h6 { font-size:10.5px; letter-spacing:0.18em; text-transform:uppercase; color:var(--violet-l); margin-bottom:12px; font-weight:700; }
+#tweaks label { display:block; font-size:10.5px; color:var(--muted); margin:10px 0 6px; letter-spacing:0.05em; text-transform:uppercase; }
+#tweaks .row { display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; }
+#tweaks button {
+  border:1px solid var(--line-2); background:transparent; color:var(--text);
+  font-family:var(--font-m); font-size:10px; padding:8px 4px; border-radius:4px; cursor:pointer;
+  letter-spacing:0.06em; text-transform:uppercase;
+}
+#tweaks button.on { border-color:var(--violet-l); background:rgba(127,119,221,0.12); color:var(--violet-ll); }
+
+/* ─── TONE VARIANTS ───
+   tone 0: default violet/teal
+   tone 1: terminal green
+   tone 2: amber terminal (old-CRT)
+   tone 3: holographic pink/cyan
+*/
+body[data-tone="1"] {
+  --violet:#44d98a; --violet-l:#7cf0a8; --violet-ll:#b6ffcc; --violet-d:#1f7a45;
+  --teal:#44d98a; --teal-l:#7cf0a8; --text:#d8ffd8; --muted:rgba(160,255,180,0.55);
+  --muted-2:rgba(160,255,180,0.28);
+  --line: rgba(68,217,138,0.18); --line-2:rgba(68,217,138,0.3);
+  --bg:#030a07; --bg2:#05120c; --bg3:#072015; --bg4:#093022;
+}
+body[data-tone="2"] {
+  --violet:#f0b84a; --violet-l:#ffd273; --violet-ll:#ffe4a8; --violet-d:#8c6213;
+  --teal:#ff8f3c; --teal-l:#ffb27a; --text:#ffe8c7; --muted:rgba(255,200,140,0.55);
+  --muted-2:rgba(255,200,140,0.28);
+  --line: rgba(240,184,74,0.18); --line-2:rgba(240,184,74,0.3);
+  --bg:#0c0703; --bg2:#140a04; --bg3:#1f1308; --bg4:#2a1b0d;
+}
+body[data-tone="3"] {
+  --violet:#ff5ac8; --violet-l:#ff8fde; --violet-ll:#ffc5ec; --violet-d:#a8227b;
+  --teal:#59e5ff; --teal-l:#94f0ff; --text:#ffe8fb; --muted:rgba(255,200,230,0.55);
+  --muted-2:rgba(255,200,230,0.28);
+  --line: rgba(255,90,200,0.18); --line-2:rgba(255,90,200,0.3);
+  --bg:#0a0318; --bg2:#120825; --bg3:#1e0e3d; --bg4:#2c1550;
+}
+body[data-pixel="1"] { --font-d: 'VT323', monospace; }
+body[data-pixel="1"] .h-display, body[data-pixel="1"] .hero h1, body[data-pixel="1"] .h-section, body[data-pixel="1"] .wait-title {
+  letter-spacing: 0.02em;
+}
+body[data-scan="1"]::before {
+  background-image:
+    linear-gradient(rgba(127,119,221,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(127,119,221,0.035) 1px, transparent 1px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px);
+}
+
+/* ────────── CAPSULE / KEY ART ────────── */
+.capsule { position:relative; border-top:1px solid var(--line); border-bottom:1px solid var(--line); background: linear-gradient(180deg, #060612, #0a0a1c); overflow:hidden; }
+.capsule::before {
+  content:''; position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse at 25% 50%, rgba(240,184,74,0.08), transparent 55%),
+    radial-gradient(ellipse at 75% 50%, rgba(127,119,221,0.1), transparent 55%);
+}
+.capsule-inner {
+  display:grid; grid-template-columns: 0.85fr 1fr; gap:64px; align-items:center;
+  padding: 80px 28px; max-width:1400px; margin:0 auto; position:relative; z-index:1;
+}
+.capsule-art {
+  position:relative; aspect-ratio: 1024/1536;
+  background: transparent;
+  /* feather edges into page bg */
+  -webkit-mask-image: radial-gradient(ellipse 75% 85% at 50% 50%, #000 55%, transparent 95%);
+          mask-image: radial-gradient(ellipse 75% 85% at 50% 50%, #000 55%, transparent 95%);
+}
+.capsule-art::after {
+  /* subtle glow behind the art */
+  content:''; position:absolute; inset:6%;
+  background: radial-gradient(ellipse, rgba(240,184,74,0.18), transparent 60%);
+  filter: blur(40px); z-index:0;
+}
+.capsule-art img {
+  width:100%; height:100%; object-fit:contain; display:block;
+  position:relative; z-index:1;
+  mix-blend-mode: screen;
+  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.6));
+}
+.capsule-copy h2 { font-family:var(--font-d); font-weight:800; font-size: clamp(36px, 4.5vw, 58px); line-height:1.02; letter-spacing:-0.035em; margin:18px 0 22px; }
+.capsule-copy h2 .a { color: var(--amber); }
+.capsule-copy p { font-family:var(--font-m); font-size:13.5px; color:var(--muted); line-height:1.75; margin-bottom:16px; max-width:520px; }
+.capsule-files { display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:28px; max-width:520px; }
+.capsule-files a {
+  display:flex; align-items:center; justify-content:space-between;
+  font-family:var(--font-m); font-size:11.5px; color:var(--violet-l); text-decoration:none;
+  padding:12px 14px; border:1px solid var(--line-2); border-radius:5px;
+  letter-spacing:0.05em; transition: all .2s;
+}
+.capsule-files a:hover { border-color:var(--violet-l); color:var(--text); background: rgba(127,119,221,0.06); }
+.capsule-files .ext { font-size:10px; color:var(--muted-2); letter-spacing:0.1em; }
+@media (max-width: 980px) {
+  .capsule-inner { grid-template-columns: 1fr; gap:32px; padding: 56px 24px; }
+  .capsule-art { max-width: 420px; margin: 0 auto; }
+}
+
+/* ────────── RESPONSIVE ────────── */
+@media (max-width: 980px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-left { border-right:none; border-bottom:1px solid var(--line); padding: 52px 24px 44px; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .stat:nth-child(2n) { border-right:none; }
+  .stat:nth-child(n+3) { border-top:1px solid var(--line); }
+  .features-head { grid-template-columns: 1fr; gap:18px; }
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .feat:nth-child(3n) { border-right:1px solid var(--line); }
+  .feat:nth-child(2n) { border-right:none; }
+  .feat:nth-child(n+3) { border-top:1px solid var(--line); }
+  .market-inner { grid-template-columns: 1fr; gap:28px; }
+  .mc-body { grid-template-columns: 1fr; }
+  .devlog-head { grid-template-columns: 1fr; }
+  .devlog-grid { grid-template-columns: 1fr; }
+  .log { border-right:none; border-bottom:1px solid var(--line); }
+  .log:last-child { border-bottom:none; }
+  footer { grid-template-columns: 1fr 1fr; }
+  .nav-links { display:none; }
+  nav.top { grid-template-columns: 1fr auto; }
+  .nav-right .pill { display:none; }
+}
+@media (max-width: 540px) {
+  .features-grid { grid-template-columns: 1fr; }
+  .feat { border-right:none !important; border-top:1px solid var(--line); }
+  .stats { grid-template-columns: 1fr 1fr; }
+  footer { grid-template-columns: 1fr; }
+  .hero-meta { grid-template-columns: 1fr; }
+  .hero-meta > div { border-right:none; border-bottom:1px solid var(--line); }
+}
+</style>
+</head>
+<body data-tone="0" data-pixel="0" data-scan="1">
+
+<!-- TICKER -->
+<div class="ticker-wrap">
+  <div class="ticker-track" id="ticker"></div>
+</div>
+
+<!-- NAV -->
+<nav class="top">
+  <a href="#" class="logo" aria-label="Bitroca home">
+    <img src="assets/bitroca-logo.png" alt="Bitroca" />
+  </a>
+  <div class="nav-links">
+    <a href="#world">The World</a>
+    <a href="#market">Market</a>
+    <a href="#devlog">Devlog</a>
+    <a href="#waitlist">Beta</a>
+  </div>
+  <div class="nav-right">
+    <span class="pill">Server online · 312</span>
+    <a href="#waitlist" class="btn btn-primary">Join beta ↗</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid">
+    <div class="hero-left">
+      <span class="hero-badge"><span class="dot"></span> Closed beta · Q3 2026</span>
+      <h1>
+        Break<span class="slash">/</span><span class="a">build</span><br/>
+        <span class="b">the world</span>.
+      </h1>
+      <p class="hero-sub">
+        Bitroca is a persistent voxel world with a live economy. Every block you mine,
+        every trade you make, every tower you build — logged, priced, permanent.
+        One server. 312 players. No resets.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#waitlist">Wishlist on Steam ↗</a>
+        <a class="btn btn-ghost" href="#world">See the world</a>
+      </div>
+      <div class="hero-meta">
+        <div>
+          <div class="l">Server uptime</div>
+          <div class="v">488d <span class="delta">+0 resets</span></div>
+        </div>
+        <div>
+          <div class="l">World size</div>
+          <div class="v">1.2M <span class="delta">blocks</span></div>
+        </div>
+        <div>
+          <div class="l">FORGE price</div>
+          <div class="v" id="forgePrice">$1.22 <span class="delta" id="forgeDelta">▲ 2.5%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="demo-bar">
+        <div class="demo-title"><b>NETWORK_01</b>/ live node mesh</div>
+        <div class="demo-stats">
+          <span>NODES <b id="nodeCount">312</b></span>
+          <span>HASH/S <b id="hashRate">1.42M</b></span>
+          <span>BLOCK <b id="blockHeight">#482,119</b></span>
+        </div>
+      </div>
+      <div class="demo-stage" id="demoStage">
+        <svg viewBox="0 0 560 400" id="mapSvg" aria-label="Live network map of nodes contributing to the chain">
+          <!-- map rendered in JS -->
+        </svg>
+        <div class="demo-hint"><b>HOVER</b> a node to see region · <b>CLICK</b> to trace hash</div>
+        <div class="demo-reward" id="demoReward">LAST BLOCK · <b id="lastForger">node-tokyo-04</b></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS STRIP -->
+<div class="stats" id="world">
+  <div class="stat">
+    <div class="lbl">Blocks mined (24h)</div>
+    <div class="num" id="s1">2,418,502</div>
+    <svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none"><polyline fill="none" stroke="var(--violet-l)" stroke-width="1" points="0,14 10,12 20,13 30,10 40,11 50,8 60,9 70,5 80,7 90,4 100,6"/></svg>
+  </div>
+  <div class="stat">
+    <div class="lbl">Active worlds</div>
+    <div class="num" id="s2">89</div>
+    <svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none"><polyline fill="none" stroke="var(--teal-l)" stroke-width="1" points="0,16 12,14 24,15 36,12 48,11 60,13 72,9 84,10 96,8 100,7"/></svg>
+  </div>
+  <div class="stat">
+    <div class="lbl">Players online</div>
+    <div class="num" id="s3">312</div>
+    <svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none"><polyline fill="none" stroke="var(--violet-l)" stroke-width="1" points="0,13 10,10 20,12 30,9 40,10 50,6 60,8 70,4 80,7 90,3 100,5"/></svg>
+  </div>
+  <div class="stat">
+    <div class="lbl">FORGE/day yield</div>
+    <div class="num" id="s4">48,230</div>
+    <svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none"><polyline fill="none" stroke="var(--teal-l)" stroke-width="1" points="0,10 10,12 20,9 30,11 40,7 50,9 60,6 70,8 80,4 90,6 100,3"/></svg>
+  </div>
+  <div class="stat">
+    <div class="lbl">Avg. session</div>
+    <div class="num" id="s5">1h 48m</div>
+    <svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none"><polyline fill="none" stroke="var(--violet-l)" stroke-width="1" points="0,12 10,14 20,11 30,13 40,10 50,12 60,9 70,11 80,7 90,9 100,6"/></svg>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="features">
+  <div class="features-head">
+    <div>
+      <span class="kicker">What is Bitroca</span>
+      <h2 class="h-section" style="margin-top:14px">A game that behaves<br/>like a market.</h2>
+    </div>
+    <p class="lede">Not another sandbox. A real-time voxel economy where scarcity, speculation, and skill all matter. Here's what you're getting into.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feat">
+      <div class="feat-head"><span class="id">01 / MINE</span><span>CORE</span></div>
+      <div class="feat-ico" data-pattern="pick"></div>
+      <h3>Mine &amp; forge</h3>
+      <p>Proof-of-work puzzles inside every block. Crack the hash, claim the reward — FORGE tokens credited to your wallet, on-chain style, in-game.</p>
+      <div class="feat-tag">&gt; EXPECTED YIELD · 0.4 FORGE/min</div>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="id">02 / OWN</span><span>CORE</span></div>
+      <div class="feat-ico" data-pattern="world"></div>
+      <h3>Personal worlds</h3>
+      <p>Stake a claim, set the rules. Private build, public trade zone, pvp arena — your call. Friends list or public leaderboard, your world is yours.</p>
+      <div class="feat-tag">&gt; CLAIM SIZE · 128×128×256</div>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="id">03 / TRADE</span><span>CORE</span></div>
+      <div class="feat-ico" data-pattern="market"></div>
+      <h3>The CIPHER market</h3>
+      <p>Every resource has a price and every price moves. Trade FORGE, IRON, DIAM, GOLD and rare drops on the open order book. Liquidity is a real skill.</p>
+      <div class="feat-tag">&gt; DAILY VOL · $1.4M FORGE</div>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="id">04 / RUN</span><span>LIVE</span></div>
+      <div class="feat-ico" data-pattern="server"></div>
+      <h3>Always online</h3>
+      <p>One persistent server. Your walls stay up when you log off. 488 days uptime, no resets, no wipes. The world ages whether you're in it or not.</p>
+      <div class="feat-tag">&gt; UPTIME · 99.94% YTD</div>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="id">05 / CLIMB</span><span>META</span></div>
+      <div class="feat-ico" data-pattern="tier"></div>
+      <h3>Tiered progression</h3>
+      <p>Wood → stone → iron → diamond → cipher. Each tier unlocks new depth, new ore, new risk. The leaderboard is on the map, not in a menu.</p>
+      <div class="feat-tag">&gt; TIER 5 HOLDERS · 14</div>
+    </div>
+    <div class="feat">
+      <div class="feat-head"><span class="id">06 / TALK</span><span>SOCIAL</span></div>
+      <div class="feat-ico" data-pattern="chat"></div>
+      <h3>Live comms</h3>
+      <p>Proximity voice, world chat, trade broadcast. When someone strikes diamond at y=−48, everyone feels it on the ticker.</p>
+      <div class="feat-tag">&gt; PEAK CONCURRENT · 421</div>
+    </div>
+  </div>
+</section>
+
+<!-- CAPSULE / KEY ART -->
+<section class="capsule" id="keyart">
+  <div class="capsule-inner">
+    <div class="capsule-art">
+      <img src="assets/bitroca-capsule.png" alt="Bitroca key art: armored red voxel hero with a visor displaying a bitcoin candlestick chart, surrounded by coins and drifting voxel asteroids." />
+    </div>
+    <div class="capsule-copy">
+      <span class="kicker">Press kit · 01</span>
+      <h2>If you can imagine it,<br/>you can <span class="a">do the unthinkable.</span></h2>
+      <p>The Bitroca hero. Armored, helmeted, wired straight into the chain. Every block on the visor is a real trade on a real order book — and the guy behind it is just another miner, a few levels ahead.</p>
+      <p>Made for writeups, Steam listings, and your Discord pinned post. High-res originals and plain logos are free to use with credit.</p>
+      <div class="capsule-files">
+        <a href="assets/bitroca-capsule.png" download>
+          <span>Key art · 1024×1536</span><span class="ext">PNG</span>
+        </a>
+        <a href="assets/bitroca-logo.png" download>
+          <span>Logo mark · transparent</span><span class="ext">PNG</span>
+        </a>
+        <a href="/cdn-cgi/l/email-protection#89f9fbecfafac9ebe0fdfbe6eae8a7eae6e4">
+          <span>Full press kit</span><span class="ext">ZIP ↗</span>
+        </a>
+        <a href="/cdn-cgi/l/email-protection#dfafadbaacac9fbdb6abadb0bcbef1bcb0b2">
+          <span>Interview the devs</span><span class="ext">@ ↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MARKET TERMINAL -->
+<section class="market" id="market">
+  <div class="features-head" style="padding: 0 28px">
+    <div>
+      <span class="kicker">Cipher market · live</span>
+      <h2 class="h-section" style="margin-top:14px">The economy<br/>is the endgame.</h2>
+    </div>
+    <p class="lede">An in-game order book with real liquidity. Prices below are illustrative — real prices update every block.</p>
+  </div>
+  <div class="market-inner">
+    <div class="market-chart">
+      <div class="mc-head">
+        <div class="l">FORGE / USD · 24H</div>
+        <div class="r">
+          <span class="tab">1H</span><span class="tab on">24H</span><span class="tab">7D</span><span class="tab">ALL</span>
+        </div>
+      </div>
+      <div class="mc-body">
+        <div class="mc-plot">
+          <svg viewBox="0 0 400 240" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="gfill" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="var(--violet-l)" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="var(--violet-l)" stop-opacity="0"/>
+              </linearGradient>
+              <pattern id="ghatch" width="10" height="10" patternUnits="userSpaceOnUse">
+                <path d="M0 10 L10 0" stroke="rgba(127,119,221,0.08)" stroke-width="0.5"/>
+              </pattern>
+            </defs>
+            <rect width="400" height="240" fill="url(#ghatch)"/>
+            <!-- horizontal grid -->
+            <g stroke="var(--line)" stroke-dasharray="2 3">
+              <line x1="0" y1="48"  x2="400" y2="48"/>
+              <line x1="0" y1="96"  x2="400" y2="96"/>
+              <line x1="0" y1="144" x2="400" y2="144"/>
+              <line x1="0" y1="192" x2="400" y2="192"/>
+            </g>
+            <!-- area -->
+            <path id="gArea" fill="url(#gfill)"
+              d="M0,180 L20,170 40,175 60,158 80,150 100,160 120,140 140,132 160,145 180,120 200,115 220,98 240,108 260,82 280,90 300,72 320,80 340,60 360,52 380,66 400,44 L400,240 L0,240 Z"/>
+            <path id="gLine" fill="none" stroke="var(--violet-l)" stroke-width="1.5"
+              d="M0,180 L20,170 40,175 60,158 80,150 100,160 120,140 140,132 160,145 180,120 200,115 220,98 240,108 260,82 280,90 300,72 320,80 340,60 360,52 380,66 400,44"/>
+            <!-- last dot -->
+            <circle cx="400" cy="44" r="3" fill="var(--teal-l)"/>
+            <circle cx="400" cy="44" r="7" fill="none" stroke="var(--teal-l)" stroke-opacity="0.35"/>
+            <!-- y axis labels -->
+            <g font-family="JetBrains Mono" font-size="9" fill="rgba(200,195,255,0.5)">
+              <text x="4" y="44">1.30</text>
+              <text x="4" y="96">1.10</text>
+              <text x="4" y="144">0.90</text>
+              <text x="4" y="192">0.70</text>
+            </g>
+          </svg>
+        </div>
+        <div class="mc-ticker" id="mcTicker">
+          <div class="row"><span>FORGE</span><b id="mtForge">1.22</b><span class="up">+2.5%</span></div>
+          <div class="row"><span>CIPHER</span><b>47.79</b><span class="up">+1.6%</span></div>
+          <div class="row"><span>DIAM</span><b>22.21</b><span class="up">+1.6%</span></div>
+          <div class="row"><span>GOLD</span><b>3.86</b><span class="up">+5.2%</span></div>
+          <div class="row"><span>IRON</span><b>0.039</b><span class="up">+1.5%</span></div>
+          <div class="row"><span>COAL</span><b>0.012</b><span class="dn">−1.2%</span></div>
+          <div class="row"><span>STONE</span><b>0.003</b><span class="dn">−0.8%</span></div>
+          <div class="row"><span>WORLD</span><b>14.66</b><span class="dn">−0.9%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="orderbook">
+      <div class="ob-head">
+        <span>FORGE / USD · order book</span>
+        <span style="color:var(--teal-l)">● LIVE</span>
+      </div>
+      <div class="ob-rows">
+        <span>Price</span><span>Size</span><span>Total</span>
+      </div>
+      <div class="ob-body">
+        <div class="ob-row ask" style="--w:84%"><span>1.248</span><span>12,400</span><span>15,466</span></div>
+        <div class="ob-row ask" style="--w:58%"><span>1.244</span><span>  8,120</span><span> 10,104</span></div>
+        <div class="ob-row ask" style="--w:42%"><span>1.239</span><span>  5,880</span><span>  7,285</span></div>
+        <div class="ob-row ask" style="--w:28%"><span>1.232</span><span>  3,920</span><span>  4,829</span></div>
+        <div class="ob-row ask" style="--w:14%"><span>1.228</span><span>  1,960</span><span>  2,407</span></div>
+      </div>
+      <div class="ob-spread">
+        <span>SPREAD · 0.008</span><span>MID · 1.224</span><span id="obLast">LAST · 1.220 ▲</span>
+      </div>
+      <div class="ob-body">
+        <div class="ob-row bid" style="--w:18%"><span>1.216</span><span>  2,480</span><span>  3,015</span></div>
+        <div class="ob-row bid" style="--w:34%"><span>1.212</span><span>  4,620</span><span>  5,600</span></div>
+        <div class="ob-row bid" style="--w:52%"><span>1.208</span><span>  7,100</span><span>  8,577</span></div>
+        <div class="ob-row bid" style="--w:70%"><span>1.203</span><span>  9,540</span><span> 11,476</span></div>
+        <div class="ob-row bid" style="--w:92%"><span>1.198</span><span> 12,520</span><span> 14,998</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEVLOG -->
+<section class="devlog" id="devlog">
+  <div class="devlog-head">
+    <div>
+      <span class="kicker">Dev feed · v0.48</span>
+      <h2 class="h-section" style="margin-top:14px">Shipped last week.</h2>
+    </div>
+    <p class="lede">We ship constantly. Here's the last three patch notes, straight from the build server. The full changelog lives on the server motd.</p>
+  </div>
+  <div class="devlog-grid">
+    <div class="log">
+      <div class="row"><span>2026.04.18 · v0.48.2</span><span class="tag patch">PATCH</span></div>
+      <h4>Deep-cave overhaul</h4>
+      <p>Y-depth below −96 is now procedurally richer. Cipher nodes spawn with 3× density, but cave-ins are twice as likely. Bring support beams.</p>
+      <ul>
+        <li>New biome: Ashglass caverns (y&lt;−160)</li>
+        <li>New ore: Nullstone (tier 6)</li>
+        <li>Pickaxe durability rebalanced</li>
+        <li class="rm">Removed infinite lava dupe</li>
+      </ul>
+    </div>
+    <div class="log">
+      <div class="row"><span>2026.04.11 · v0.48.1</span><span class="tag feat">FEATURE</span></div>
+      <h4>Market orders, finally</h4>
+      <p>Limit &amp; stop orders on the CIPHER exchange. Liquidity providers get a 0.1% rebate on fills. Yes, you can finally set it and forget it.</p>
+      <ul>
+        <li>Order book UI, live depth chart</li>
+        <li>FORGE/USD oracle from 3 signers</li>
+        <li>Wallet multi-sig for guild treasuries</li>
+      </ul>
+    </div>
+    <div class="log">
+      <div class="row"><span>2026.04.04 · v0.48.0</span><span class="tag fix">HOTFIX</span></div>
+      <h4>World stability pass</h4>
+      <p>Fixed the chunk-load desync that was eating blocks at world edges. Also: the bug where dropping stone inside water was pricing it as diamond.</p>
+      <ul>
+        <li>Chunk sync at world borders</li>
+        <li class="rm">Stone→diamond pricing exploit</li>
+        <li>Lowered server tick to 60Hz (was 40)</li>
+        <li>New /status command</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- WAITLIST -->
+<section class="wait" id="waitlist">
+  <div class="wait-inner">
+    <span class="kicker" style="margin-bottom:18px">Closed beta · limited</span>
+    <h2 class="wait-title">First 5,000 players<br/>get a <span class="pipe">|</span> plot of land.</h2>
+    <p class="wait-sub">Sign up with your email and we'll send you a Steam key the day we flip beta access on. No spam, one email per patch cycle.</p>
+    <form class="wait-form" id="waitForm" onsubmit="event.preventDefault(); document.getElementById('waitForm').innerHTML='<div style=\'padding:14px 18px;font-family:var(--font-m);font-size:13px;color:var(--teal-l)\'>✓ You\'re #<b>'+(2341+Math.floor(Math.random()*10))+'</b> on the list. Check your inbox.</div>';">
+      <input type="email" placeholder="you@example.com" required />
+      <button type="submit">Claim a plot ↗</button>
+    </form>
+    <div class="wait-note">By joining, you agree to our <a href="privacy.html" style="color:var(--violet-l)">privacy policy</a> and <a href="eula.html" style="color:var(--violet-l)">EULA</a>. Unsubscribe any time.</div>
+    <div class="wait-counter"><span class="d"></span> <b id="waitCount">2,340</b> / 5,000 claimed · beta flips <b>Q3 2026</b></div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-brand">
+    <a href="#" class="logo" style="margin-bottom:14px;display:block">
+      <img src="assets/bitroca-logo.png" alt="Bitroca" style="height:44px" />
+    </a>
+    <p>A persistent voxel world built by two people and one VPS. We ship every week.</p>
+  </div>
+  <div>
+    <h5>Game</h5>
+    <ul>
+      <li><a href="#world">The World</a></li>
+      <li><a href="#market">Market</a></li>
+      <li><a href="#devlog">Devlog</a></li>
+      <li><a href="#waitlist">Beta signup</a></li>
+    </ul>
+  </div>
+  <div>
+    <h5>Company</h5>
+    <ul>
+      <li><a href="#">About</a></li>
+      <li><a href="#">Press kit</a></li>
+      <li><a href="/cdn-cgi/l/email-protection#681b1d1818071a1c280a011c1a070b09460b0705">Contact</a></li>
+      <li><a href="privacy.html">Privacy</a></li>
+      <li><a href="eula.html">EULA</a></li>
+    </ul>
+  </div>
+  <div>
+    <h5>Community</h5>
+    <ul>
+      <li><a href="#">Discord</a></li>
+      <li><a href="#">Twitter / X</a></li>
+      <li><a href="#">YouTube</a></li>
+      <li><a href="#">Bluesky</a></li>
+    </ul>
+  </div>
+  <div>
+    <h5>Server</h5>
+    <ul>
+      <li><a href="#">Status</a></li>
+      <li><a href="#">Leaderboard</a></li>
+      <li><a href="#">Map</a></li>
+      <li><a href="#">API</a></li>
+    </ul>
+  </div>
+  <div class="foot-bottom">
+    <span>© 2026 Bitroca · Built with stone picks and stubbornness.</span>
+    <span>v0.48.2 · Build 2026.04.18-4a7f</span>
+  </div>
+</footer>
+
+<!-- TWEAKS PANEL -->
+<div id="tweaks" role="dialog" aria-label="Tweaks">
+  <h6>Tweaks</h6>
+  <label>Color tone</label>
+  <div class="row">
+    <button data-tone="0">Violet</button>
+    <button data-tone="1">Green</button>
+    <button data-tone="2">Amber</button>
+    <button data-tone="3">Neon</button>
+  </div>
+  <label>Display font</label>
+  <div class="row" style="grid-template-columns:repeat(2,1fr)">
+    <button data-pixel="0">Syne</button>
+    <button data-pixel="1">Pixel</button>
+  </div>
+  <label>CRT scanlines</label>
+  <div class="row" style="grid-template-columns:repeat(2,1fr)">
+    <button data-scan="1">On</button>
+    <button data-scan="0">Off</button>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+/* ─── TICKER POPULATION ─── */
+(function buildTicker(){
+  const items = [
+    ['FORGE','1.22','up','▲ 2.5%'],
+    ['CIPHER','47.79','up','▲ 1.6%'],
+    ['IRON','0.039','up','▲ 1.5%'],
+    ['COAL','0.012','dn','▼ 1.2%'],
+    ['GOLD','3.86','up','▲ 5.2%'],
+    ['STONE','0.003','dn','▼ 0.8%'],
+    ['DIAM','22.21','up','▲ 1.6%'],
+    ['NULL','142.0','up','▲ 8.4%'],
+    ['WORLD','14.66','dn','▼ 0.9%'],
+    ['PLAYERS','312','','online'],
+    ['BLOCKS','1,204,359','','mined'],
+    ['UPTIME','488d','',''],
+  ];
+  const html = items.map(([s,v,c,d])=>
+    `<span class="tick"><span class="s">${s}</span><span class="v">${v}</span>${d?`<span class="${c}">${d}</span>`:''}</span>`
+  ).join('');
+  document.getElementById('ticker').innerHTML = html + html;
+})();
+
+/* ─── FEATURE ICON PATTERNS (voxel pixel glyphs) ─── */
+(function drawIcons(){
+  const palettes = {
+    pick:   ['.','.','v','v','.','.','v','v','.','v','v','.','v','v','.','.'],
+    world:  ['.','v','v','.','v','t','t','v','v','t','t','v','.','v','v','.'],
+    market: ['.','.','.','v','.','.','v','v','.','v','v','v','v','v','v','v'],
+    server: ['v','v','v','v','.','.','.','.','v','v','v','v','.','.','.','.'],
+    tier:   ['.','.','.','v','.','.','v','v','.','v','v','v','v','v','v','v'],
+    chat:   ['v','v','v','v','v','.','.','.','v','.','.','v','v','v','v','.'],
+  };
+  document.querySelectorAll('.feat-ico').forEach(el=>{
+    const p = palettes[el.dataset.pattern] || palettes.pick;
+    el.innerHTML = p.map(c=>{
+      const color = c==='v' ? 'var(--violet-l)' :
+                    c==='t' ? 'var(--teal-l)' :
+                    'rgba(127,119,221,0.08)';
+      return `<i style="background:${color}"></i>`;
+    }).join('');
+  });
+})();
+
+/* ─── LIVE-ISH NUMBERS ─── */
+(function liveStats(){
+  const s1 = document.getElementById('s1');
+  const s3 = document.getElementById('s3');
+  const s4 = document.getElementById('s4');
+  let blocks = 2418502, players = 312, forge = 48230;
+  setInterval(()=>{
+    blocks += Math.floor(Math.random()*42)+8;
+    players = 300 + Math.floor(Math.random()*36);
+    forge += Math.floor(Math.random()*14)+2;
+    s1.textContent = blocks.toLocaleString();
+    s3.textContent = players;
+    s4.textContent = forge.toLocaleString();
+  }, 1800);
+
+  // waitlist trickle
+  const wc = document.getElementById('waitCount');
+  let w = 2340;
+  setInterval(()=>{
+    if (Math.random() > 0.35) { w += 1; wc.textContent = w.toLocaleString(); }
+  }, 4200);
+
+  // forge price jitter
+  const fp = document.getElementById('forgePrice');
+  const fd = document.getElementById('forgeDelta');
+  const mt = document.getElementById('mtForge');
+  const obLast = document.getElementById('obLast');
+  let price = 1.22;
+  setInterval(()=>{
+    const step = (Math.random()-0.45) * 0.01;
+    price = Math.max(1.05, Math.min(1.38, price + step));
+    const pct = ((price - 1.19) / 1.19 * 100);
+    const dir = pct >= 0 ? '▲' : '▼';
+    const cls = pct >= 0 ? 'var(--teal-l)' : 'var(--red)';
+    fp.innerHTML = `$${price.toFixed(2)} <span class="delta" style="color:${cls}">${dir} ${Math.abs(pct).toFixed(1)}%</span>`;
+    fd.style.color = cls;
+    if (mt) mt.textContent = price.toFixed(2);
+    if (obLast) obLast.innerHTML = `LAST · ${price.toFixed(3)} ${dir}`;
+  }, 1600);
+})();
+
+/* ─── HERO: LIVE NETWORK MAP ─────────────────────────────────────
+   Dotted-continents world map with pulsing nodes. Nodes emit hash
+   contributions along arcs toward the current block forger. Every
+   few seconds a new forger wins the block and the network converges.
+*/
+(function networkMap(){
+  const svg = document.getElementById('mapSvg');
+  if (!svg) return;
+  const NS = 'http://www.w3.org/2000/svg';
+  const nodeCountEl = document.getElementById('nodeCount');
+  const hashRateEl  = document.getElementById('hashRate');
+  const heightEl    = document.getElementById('blockHeight');
+  const lastForger  = document.getElementById('lastForger');
+
+  // ── world map as a dot grid, with continent silhouettes
+  // (simple bounding boxes, then random-dot fill; cheap + readable)
+  const W = 560, H = 400;
+  const continents = [
+    // [x, y, w, h, density]  — equirectangular-ish caricature
+    // N. America
+    { x: 60,  y: 90,  w: 140, h: 90,  d: 0.32 },
+    // S. America
+    { x: 130, y: 200, w: 70,  h: 110, d: 0.3 },
+    // Europe
+    { x: 230, y: 90,  w: 80,  h: 60,  d: 0.4 },
+    // Africa
+    { x: 240, y: 160, w: 80,  h: 120, d: 0.3 },
+    // Asia
+    { x: 310, y: 85,  w: 170, h: 110, d: 0.28 },
+    // SE Asia / Indonesia
+    { x: 420, y: 200, w: 70,  h: 40,  d: 0.3 },
+    // Australia
+    { x: 440, y: 250, w: 80,  h: 50,  d: 0.3 },
+  ];
+
+  const dotLayer = document.createElementNS(NS,'g');
+  dotLayer.setAttribute('opacity','0.55');
+  svg.appendChild(dotLayer);
+
+  function rand(seed){ let x = Math.sin(seed) * 10000; return x - Math.floor(x); }
+
+  let dotSeed = 1;
+  for (const c of continents) {
+    const count = Math.floor(c.w * c.h * c.d * 0.03);
+    for (let i = 0; i < count; i++) {
+      const rx = rand(dotSeed++); const ry = rand(dotSeed++);
+      const x = c.x + rx * c.w;
+      const y = c.y + ry * c.h;
+      const d = document.createElementNS(NS,'circle');
+      d.setAttribute('cx', x); d.setAttribute('cy', y);
+      d.setAttribute('r', 1.1);
+      d.setAttribute('fill', 'var(--violet)');
+      d.setAttribute('fill-opacity', 0.35 + rand(dotSeed++) * 0.25);
+      dotLayer.appendChild(d);
+    }
+  }
+
+  // equator / faint graticule
+  const grid = document.createElementNS(NS,'g');
+  grid.setAttribute('stroke','var(--line)');
+  grid.setAttribute('stroke-width','0.5');
+  grid.setAttribute('fill','none');
+  for (let y = 60; y <= 340; y += 40) {
+    const l = document.createElementNS(NS,'line');
+    l.setAttribute('x1', 30); l.setAttribute('x2', 530);
+    l.setAttribute('y1', y);  l.setAttribute('y2', y);
+    l.setAttribute('stroke-dasharray','2 6');
+    grid.appendChild(l);
+  }
+  svg.insertBefore(grid, dotLayer);
+
+  // ── nodes (fake cities)
+  const cities = [
+    { name:'sf',      label:'san-francisco-02', x: 90,  y: 135, tier:2 },
+    { name:'nyc',     label:'new-york-11',      x: 170, y: 120, tier:3 },
+    { name:'mex',     label:'mexico-city-01',   x: 130, y: 175, tier:1 },
+    { name:'sao',     label:'são-paulo-07',     x: 175, y: 260, tier:2 },
+    { name:'lon',     label:'london-14',        x: 248, y: 112, tier:3 },
+    { name:'ber',     label:'berlin-03',        x: 275, y: 108, tier:2 },
+    { name:'mad',     label:'madrid-02',        x: 245, y: 135, tier:1 },
+    { name:'lag',     label:'lagos-01',         x: 258, y: 205, tier:1 },
+    { name:'jnb',     label:'johannesburg-02',  x: 280, y: 260, tier:2 },
+    { name:'dxb',     label:'dubai-05',         x: 325, y: 160, tier:3 },
+    { name:'mum',     label:'mumbai-04',        x: 355, y: 175, tier:2 },
+    { name:'sin',     label:'singapore-09',     x: 425, y: 215, tier:3 },
+    { name:'tyo',     label:'tokyo-04',         x: 475, y: 140, tier:3 },
+    { name:'sel',     label:'seoul-02',         x: 460, y: 132, tier:2 },
+    { name:'syd',     label:'sydney-06',        x: 490, y: 290, tier:2 },
+    { name:'mel',     label:'melbourne-01',     x: 478, y: 305, tier:1 },
+    { name:'bjs',     label:'beijing-08',       x: 440, y: 128, tier:3 },
+  ];
+
+  const nodeLayer = document.createElementNS(NS,'g');
+  const arcLayer  = document.createElementNS(NS,'g');
+  svg.appendChild(arcLayer);
+  svg.appendChild(nodeLayer);
+
+  const tierColor = {1:'var(--violet)', 2:'var(--violet-l)', 3:'var(--teal-l)'};
+
+  cities.forEach(n => {
+    const g = document.createElementNS(NS,'g');
+    g.setAttribute('class','node');
+    g.setAttribute('transform', `translate(${n.x},${n.y})`);
+    g.style.cursor = 'pointer';
+
+    const halo = document.createElementNS(NS,'circle');
+    halo.setAttribute('r', 3 + n.tier);
+    halo.setAttribute('fill', 'none');
+    halo.setAttribute('stroke', tierColor[n.tier]);
+    halo.setAttribute('stroke-opacity','0.35');
+    halo.setAttribute('stroke-width','0.75');
+    g.appendChild(halo);
+
+    const dot = document.createElementNS(NS,'circle');
+    dot.setAttribute('r', 2);
+    dot.setAttribute('fill', tierColor[n.tier]);
+    g.appendChild(dot);
+
+    // ripple (animated on block-win)
+    const ripple = document.createElementNS(NS,'circle');
+    ripple.setAttribute('r', 3);
+    ripple.setAttribute('fill','none');
+    ripple.setAttribute('stroke', tierColor[n.tier]);
+    ripple.setAttribute('stroke-width','0.75');
+    ripple.setAttribute('opacity','0');
+    ripple.setAttribute('class','ripple');
+    g.appendChild(ripple);
+
+    // tooltip on hover
+    g.addEventListener('mouseenter', () => {
+      halo.setAttribute('stroke-opacity','0.9');
+      halo.setAttribute('r', 6 + n.tier);
+      showLabel(n);
+    });
+    g.addEventListener('mouseleave', () => {
+      halo.setAttribute('stroke-opacity','0.35');
+      halo.setAttribute('r', 3 + n.tier);
+      hideLabel();
+    });
+    g.addEventListener('click', () => {
+      emitBurst(n);
+      winBlock(n);
+    });
+
+    n._g = g; n._halo = halo; n._dot = dot; n._ripple = ripple;
+    nodeLayer.appendChild(g);
+  });
+
+  // tooltip (svg text)
+  const tip = document.createElementNS(NS,'g');
+  tip.setAttribute('pointer-events','none');
+  tip.style.opacity = 0;
+  const tipBg = document.createElementNS(NS,'rect');
+  tipBg.setAttribute('fill','rgba(7,7,15,0.92)');
+  tipBg.setAttribute('stroke','var(--line-2)');
+  tipBg.setAttribute('rx','3');
+  const tipTxt = document.createElementNS(NS,'text');
+  tipTxt.setAttribute('font-family','JetBrains Mono');
+  tipTxt.setAttribute('font-size','9');
+  tipTxt.setAttribute('fill','var(--violet-ll)');
+  tip.appendChild(tipBg); tip.appendChild(tipTxt);
+  svg.appendChild(tip);
+
+  function showLabel(n){
+    const text = `${n.label.toUpperCase()} · T${n.tier}`;
+    tipTxt.textContent = text;
+    const pad = 5;
+    // measure
+    const bb = tipTxt.getBBox ? null : null;
+    // position
+    tipTxt.setAttribute('x', n.x + 10);
+    tipTxt.setAttribute('y', n.y - 8);
+    // fit background after paint
+    requestAnimationFrame(()=>{
+      const b = tipTxt.getBBox();
+      tipBg.setAttribute('x', b.x - pad);
+      tipBg.setAttribute('y', b.y - pad + 1);
+      tipBg.setAttribute('width', b.width + pad*2);
+      tipBg.setAttribute('height', b.height + pad*2 - 2);
+      tip.style.opacity = 1;
+    });
+  }
+  function hideLabel(){ tip.style.opacity = 0; }
+
+  // ── arcs from contributing nodes → forger
+  function shootArc(from, to, color){
+    const cx = (from.x + to.x) / 2;
+    const cy = (from.y + to.y) / 2 - 30 - Math.random()*30;
+    const d = `M${from.x} ${from.y} Q${cx} ${cy} ${to.x} ${to.y}`;
+    const path = document.createElementNS(NS,'path');
+    path.setAttribute('d', d);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke', color);
+    path.setAttribute('stroke-width','0.8');
+    path.setAttribute('stroke-opacity','0.55');
+    path.setAttribute('stroke-dasharray','0 1000');
+    arcLayer.appendChild(path);
+    const len = path.getTotalLength();
+    path.setAttribute('stroke-dasharray', `${len}`);
+    path.setAttribute('stroke-dashoffset', `${len}`);
+    path.animate(
+      [{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
+      { duration: 900 + Math.random()*400, easing: 'cubic-bezier(.4,.1,.2,1)', fill: 'forwards' }
+    );
+    // fade out
+    setTimeout(()=>{
+      path.animate([{opacity:0.8},{opacity:0}], {duration:600, fill:'forwards'}).onfinish = () => path.remove();
+    }, 900);
+
+    // traveling packet
+    const pkt = document.createElementNS(NS,'circle');
+    pkt.setAttribute('r', 1.6);
+    pkt.setAttribute('fill', color);
+    arcLayer.appendChild(pkt);
+    const total = len;
+    const start = performance.now();
+    const dur = 900 + Math.random()*300;
+    function step(t){
+      const p = Math.min(1, (t - start) / dur);
+      const pt = path.getPointAtLength(total * p);
+      pkt.setAttribute('cx', pt.x); pkt.setAttribute('cy', pt.y);
+      if (p < 1) requestAnimationFrame(step); else pkt.remove();
+    }
+    requestAnimationFrame(step);
+  }
+
+  function emitBurst(forger){
+    // 4-7 random contributors fire arcs to forger
+    const pool = cities.filter(c => c !== forger);
+    const n = 4 + Math.floor(Math.random()*4);
+    for (let i = 0; i < n; i++) {
+      const src = pool[Math.floor(Math.random()*pool.length)];
+      const color = Math.random() < 0.3 ? 'var(--teal-l)' : 'var(--violet-l)';
+      setTimeout(()=> shootArc(src, forger, color), i * 70);
+    }
+    // ripple on forger
+    const r = forger._ripple;
+    r.setAttribute('r', 3);
+    r.setAttribute('opacity', 0.9);
+    r.animate(
+      [{r: 3, opacity: 0.9}, {r: 22, opacity: 0}],
+      { duration: 1200, easing: 'cubic-bezier(.2,.6,.2,1)', fill:'forwards' }
+    );
+  }
+
+  // live counters
+  let height = 482119;
+  let rate = 1.42;
+  let nodes = 312;
+
+  function winBlock(forger){
+    height += 1;
+    heightEl.textContent = '#' + height.toLocaleString();
+    lastForger.textContent = forger.label;
+    // small jitter
+    rate = Math.max(1.1, Math.min(1.9, rate + (Math.random()-0.5) * 0.06));
+    hashRateEl.textContent = rate.toFixed(2) + 'M';
+    nodes = 300 + Math.floor(Math.random()*40);
+    nodeCountEl.textContent = nodes;
+  }
+
+  // periodic auto-mine
+  setInterval(()=>{
+    // weighted pick: tier 3 wins more often
+    const weighted = [];
+    cities.forEach(c => { for (let i=0; i<c.tier*c.tier; i++) weighted.push(c); });
+    const forger = weighted[Math.floor(Math.random()*weighted.length)];
+    emitBurst(forger);
+    winBlock(forger);
+  }, 2600);
+
+  // initial seeding: a few quick arcs
+  setTimeout(()=>{
+    for (let i = 0; i < 3; i++) {
+      setTimeout(()=>{
+        const forger = cities[Math.floor(Math.random()*cities.length)];
+        emitBurst(forger); winBlock(forger);
+      }, i * 600);
+    }
+  }, 200);
+
+})();
+
+/* old block-breaker kept as dead code:
+(function _legacy(){
+  const svg = document.getElementById('demoSvg');
+  const mined = document.getElementById('minedCount');
+  const forged = document.getElementById('forgeEarned');
+  const reward = document.getElementById('demoReward');
+  let mCount = 0, forgeTotal = 0;
+
+  const COLS = 8, ROWS = 5;
+  const BW = 44, BH = 22; // block width, "depth" offset
+
+  const blockTypes = [
+    {name:'stone', top:'#3a3a52', left:'#24243a', right:'#2e2e48', weight: 0.35, reward:[0.01, 'STONE']},
+    {name:'iron',  top:'#6b6b82', left:'#4a4a66', right:'#54547a', weight: 0.18, reward:[0.04, 'IRON']},
+    {name:'coal',  top:'#1a1a26', left:'#0f0f1a', right:'#15152a', weight: 0.17, reward:[0.01, 'COAL']},
+    {name:'gold',  top:'#e0a744', left:'#a67a24', right:'#bd8e32', weight: 0.08, reward:[0.12, 'GOLD']},
+    {name:'diam',  top:'#6ed3ad', left:'#3f8e76', right:'#4fae8e', weight: 0.06, reward:[0.40, 'DIAM']},
+    {name:'forge', top:'#a89fff', left:'#6b63bd', right:'#8279dd', weight: 0.10, reward:[0.25, 'FORGE']},
+    {name:'null',  top:'#ff5ac8', left:'#a8227b', right:'#c83da0', weight: 0.02, reward:[1.20, 'NULL']},
+    {name:'empty', top:null, weight: 0.04},
+  ];
+
+  function pickType(){
+    let r = Math.random(), sum = 0;
+    for (const t of blockTypes) { sum += t.weight; if (r <= sum) return t; }
+    return blockTypes[0];
+  }
+
+  // grid origin
+  const OX = 260, OY = 120;
+
+  function isoX(c, r){ return OX + (c - r) * BW; }
+  function isoY(c, r){ return OY + (c + r) * (BH); }
+
+  function buildBlock(c, r, type, depth=1){
+    const x = isoX(c, r), y = isoY(c, r);
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','block-voxel');
+    g.setAttribute('transform',`translate(${x},${y})`);
+    g.dataset.col = c; g.dataset.row = r; g.dataset.type = type.name;
+
+    if (type.name === 'empty') {
+      // dark pit
+      const pit = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      pit.setAttribute('points', `${-BW},0 0,${BH} ${BW},0 0,${-BH}`);
+      pit.setAttribute('fill', '#05050c');
+      pit.setAttribute('stroke','rgba(127,119,221,0.12)');
+      pit.setAttribute('stroke-width','0.5');
+      g.appendChild(pit);
+      g.style.pointerEvents = 'none';
+      return g;
+    }
+
+    // top face (diamond)
+    const top = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    top.setAttribute('points', `${-BW},0 0,${BH} ${BW},0 0,${-BH}`);
+    top.setAttribute('fill', type.top);
+    top.setAttribute('stroke','rgba(0,0,0,0.25)');
+    top.setAttribute('stroke-width','0.5');
+    g.appendChild(top);
+
+    // left face
+    const left = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    left.setAttribute('points', `${-BW},0 0,${BH} 0,${BH+BH*1.3} ${-BW},${BH*1.3}`);
+    left.setAttribute('fill', type.left);
+    g.appendChild(left);
+
+    // right face
+    const right = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    right.setAttribute('points', `${BW},0 0,${BH} 0,${BH+BH*1.3} ${BW},${BH*1.3}`);
+    right.setAttribute('fill', type.right);
+    g.appendChild(right);
+
+    // inner highlight pixel (top face dither)
+    const dot = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    dot.setAttribute('x',-4); dot.setAttribute('y',-6);
+    dot.setAttribute('width', 6); dot.setAttribute('height', 3);
+    dot.setAttribute('fill','rgba(255,255,255,0.12)');
+    g.appendChild(dot);
+
+    return g;
+  }
+
+  const blocks = {};
+  function renderGrid(){
+    svg.innerHTML = '';
+    // sort so further ones render first
+    const order = [];
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) order.push([c,r]);
+    order.sort((a,b) => (a[0]+a[1]) - (b[0]+b[1]));
+
+    // generate/maintain types
+    for (const [c,r] of order) {
+      const key = `${c},${r}`;
+      if (!blocks[key]) blocks[key] = pickType();
+      const type = blocks[key];
+      const g = buildBlock(c, r, type);
+      if (type.name !== 'empty') {
+        g.addEventListener('click', (e) => breakBlock(c, r, g, type, e));
+      }
+      svg.appendChild(g);
+    }
+  }
+
+  function breakBlock(c, r, g, type, evt){
+    g.classList.add('breaking');
+    // floating reward
+    const [amt, unit] = type.reward;
+    const cx = parseFloat(g.getAttribute('transform').match(/-?\d+(\.\d+)?/g)[0]);
+    const cy = parseFloat(g.getAttribute('transform').match(/-?\d+(\.\d+)?/g)[1]);
+    const floater = document.createElementNS('http://www.w3.org/2000/svg','text');
+    floater.setAttribute('x', cx);
+    floater.setAttribute('y', cy - 20);
+    floater.setAttribute('text-anchor','middle');
+    floater.setAttribute('class','floater');
+    floater.textContent = `+${amt} ${unit}`;
+    svg.appendChild(floater);
+    setTimeout(()=> floater.remove(), 900);
+
+    // counters
+    mCount++; mined.textContent = mCount;
+    if (unit === 'FORGE') forgeTotal += amt;
+    else if (unit === 'DIAM') forgeTotal += amt * 10;
+    else if (unit === 'GOLD') forgeTotal += amt * 2;
+    else if (unit === 'NULL') forgeTotal += amt * 40;
+    else forgeTotal += amt * 0.4;
+    forged.textContent = forgeTotal.toFixed(2);
+
+    // last reward banner
+    reward.innerHTML = `LAST · <b>+${amt} ${unit}</b>`;
+
+    // make it empty
+    blocks[`${c},${r}`] = blockTypes[blockTypes.length-1]; // empty
+    // Replace node
+    const newNode = buildBlock(c, r, blocks[`${c},${r}`]);
+    g.replaceWith(newNode);
+
+    // schedule regen
+    setTimeout(()=>{
+      blocks[`${c},${r}`] = pickType();
+      const t = blocks[`${c},${r}`];
+      const node = buildBlock(c, r, t);
+      if (t.name !== 'empty') node.addEventListener('click', (e) => breakBlock(c, r, node, t, e));
+      // find and replace the empty one
+      const selector = `g[data-col="${c}"][data-row="${r}"]`;
+      const existing = svg.querySelector(selector);
+      if (existing) existing.replaceWith(node);
+    }, 2400 + Math.random()*2000);
+  }
+
+  renderGrid();
+
+})();
+*/
+
+/* ─── TWEAKS WIRING ─── */
+(function tweaks(){
+  const panel = document.getElementById('tweaks');
+  // host handshake
+  window.addEventListener('message', (e)=>{
+    const t = e?.data?.type;
+    if (t === '__activate_edit_mode') panel.classList.add('open');
+    if (t === '__deactivate_edit_mode') panel.classList.remove('open');
+  });
+  try { window.parent.postMessage({type:'__edit_mode_available'}, '*'); } catch(e){}
+
+  function applyButtonState(attr, val){
+    panel.querySelectorAll(`button[data-${attr}]`).forEach(b=>{
+      b.classList.toggle('on', b.dataset[attr] === String(val));
+    });
+  }
+
+  // initial
+  ['tone','pixel','scan'].forEach(k => applyButtonState(k, document.body.dataset[k]));
+
+  panel.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button[data-tone],button[data-pixel],button[data-scan]');
+    if (!btn) return;
+    if (btn.dataset.tone  !== undefined) { document.body.dataset.tone  = btn.dataset.tone;  applyButtonState('tone',  btn.dataset.tone); }
+    if (btn.dataset.pixel !== undefined) { document.body.dataset.pixel = btn.dataset.pixel; applyButtonState('pixel', btn.dataset.pixel); }
+    if (btn.dataset.scan  !== undefined) { document.body.dataset.scan  = btn.dataset.scan;  applyButtonState('scan',  btn.dataset.scan); }
+  });
+})();
+</script>
+</body>
+</html>
