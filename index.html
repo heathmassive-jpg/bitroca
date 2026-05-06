@@ -187,19 +187,29 @@ document.addEventListener('DOMContentLoaded', async function() {
   </script>
 
   <script>
-    // HUD horizontal-blocks wirer — finds the five stat blocks rendered by the
-    // bundler and populates four of them with live data.
     (function () {
       "use strict";
 
-      // Labels exactly as they appear (case-insensitively) in the bundled HUD.
-      // Tweak here if the bundler ever changes the copy.
+      var STATS_URL = "https://api.bitroca.com/stats.json";
+
+      // Finder substrings matched case-insensitively against current bundled HUD text.
       var LABELS = {
-        blocks_24h:     "BLOCKS MINED",
-        active_worlds:  "Active worlds",
-        players_online: "Players online",
-        forge_yield_24h: "Forge/day yield"
-        // "Avg session" is intentionally absent — server does not track it yet.
+        block_num:      "BLOCKS MINED",
+        active_worlds:  "ACTIVE WORLDS",
+        players_online: "PLAYERS ONLINE",
+        last_finder:    "FORGE/DAY YIELD",
+        time_since:     "AVG"
+      };
+
+      // Written into labelEl.textContent once after the first successful DOM walk.
+      // Gate on _relabeled because once we overwrite textContent the original-substring
+      // finder will no longer match — the cache must already be populated before relabeling.
+      var NEW_LABELS = {
+        block_num:      "BLOCK #",
+        active_worlds:  "ACTIVE WORLDS",
+        players_online: "PLAYERS ONLINE",
+        last_finder:    "LAST FINDER",
+        time_since:     "TIME SINCE RESET"
       };
 
       // force no-cache here because nginx sends max-age=3600 which would freeze
@@ -209,39 +219,30 @@ document.addEventListener('DOMContentLoaded', async function() {
       var RETRY_DELAY_MS   = 500;
       var POLL_INTERVAL_MS = 60000;
 
+      var _slotMap    = null;
+      var _relabeled  = false;
+      var _warnedMissing = {};
+
       // ── DOM walker ──────────────────────────────────────────────────────────
 
-      // Returns the text content of an element stripped of extra whitespace.
       function normText(el) {
         return (el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
       }
 
-      // Walks up the DOM from a label-matching node to find the container block,
-      // then looks for a sibling/descendant that looks like the numeric value.
-      // Heuristic order (cheapest first):
-      //   1. A descendant with a class containing "value", "stat", "number", or "count".
-      //   2. The largest-font-size descendant inside the block container.
-      //   3. Any immediate next-sibling that has no child text nodes matching a label.
       function findValueEl(labelNode) {
-        // Walk up to find the stat block container (stop at 6 levels).
         var container = labelNode;
         for (var depth = 0; depth < 6; depth++) {
           container = container.parentElement;
           if (!container || container === document.body) return null;
 
-          // Check class-hint descendants first.
           var classHints = ["value", "stat", "number", "count"];
           for (var h = 0; h < classHints.length; h++) {
-            var found = container.querySelector(
-              "[class*='" + classHints[h] + "']"
-            );
-            // Reject if the found element is the label element itself or contains it.
+            var found = container.querySelector("[class*='" + classHints[h] + "']");
             if (found && found !== labelNode && !found.contains(labelNode)) {
               return found;
             }
           }
 
-          // Next-sibling heuristic: siblings that are leaf-ish numeric holders.
           var sibling = labelNode.nextElementSibling;
           while (sibling) {
             var sibText = normText(sibling);
@@ -262,15 +263,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         return null;
       }
 
-      // Scans the full DOM for elements whose text contains the given label
-      // string (case-insensitive).  Returns the first matching element, or null.
-      function findLabelNode(labelText) {
-        var lower = labelText.toLowerCase();
+      function findLabelNode(substring) {
+        var lower = substring.toLowerCase();
         var all   = document.querySelectorAll("*");
         for (var i = 0; i < all.length; i++) {
           var el = all[i];
-          // Only consider leaf-like nodes whose direct text matches (skip
-          // containers that merely inherit the text from a child).
           if (el.children.length > 3) continue;
           var t = normText(el);
           if (t.indexOf(lower) !== -1) {
@@ -280,57 +277,89 @@ document.addEventListener('DOMContentLoaded', async function() {
         return null;
       }
 
-      // Attempts to build the field→valueElement map.
-      // Returns the map (may be empty if no labels matched).
-      function buildValueMap() {
+      // Builds { slot: { labelEl, valueEl } } by walking the DOM once.
+      // Result is cached in _slotMap; subsequent calls are no-ops.
+      function buildSlotMap() {
+        if (_slotMap) return _slotMap;
         var map = {};
-        for (var field in LABELS) {
-          if (!LABELS.hasOwnProperty(field)) continue;
-          var labelText = LABELS[field];
-          var labelNode = findLabelNode(labelText);
-          if (!labelNode) {
-            console.warn("[bitroca-hud] Could not find HUD label in DOM:", labelText);
+        for (var slot in LABELS) {
+          if (!LABELS.hasOwnProperty(slot)) continue;
+          var substring = LABELS[slot];
+          var labelEl   = findLabelNode(substring);
+          if (!labelEl) {
+            if (!_warnedMissing[slot]) {
+              console.warn("[bitroca-hud] Could not find HUD label in DOM:", substring);
+              _warnedMissing[slot] = true;
+            }
             continue;
           }
-          var valueEl = findValueEl(labelNode);
+          var valueEl = findValueEl(labelEl);
           if (!valueEl) {
-            console.warn("[bitroca-hud] Found label but could not locate its value element:", labelText);
+            if (!_warnedMissing[slot]) {
+              console.warn("[bitroca-hud] Found label but could not locate its value element:", substring);
+              _warnedMissing[slot] = true;
+            }
             continue;
           }
-          map[field] = valueEl;
+          map[slot] = { labelEl: labelEl, valueEl: valueEl };
+        }
+        var count = Object.keys(map).length;
+        if (count > 0) {
+          _slotMap = map;
+          console.info("[bitroca-hud] mapped " + count + "/5 slots");
         }
         return map;
       }
 
       // ── Formatting ──────────────────────────────────────────────────────────
 
-      function fmtForge(n) {
-        var num = Number(n);
-        if (num >= 100) {
-          return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
-        }
-        return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      function relTime(isoString) {
+        if (!isoString) return "—";
+        var secs = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+        if (secs < 60)    return "just now";
+        if (secs < 3600)  return Math.floor(secs / 60) + "m";
+        if (secs < 86400) return Math.floor(secs / 3600) + "h";
+        return Math.floor(secs / 86400) + "d";
       }
 
       // ── Populate ────────────────────────────────────────────────────────────
 
-      function applyData(valueMap, data) {
-        if (valueMap.blocks_24h)      valueMap.blocks_24h.textContent      = Number(data.blocks_24h).toLocaleString();
-        if (valueMap.active_worlds)   valueMap.active_worlds.textContent   = Number(data.active_worlds).toLocaleString();
-        if (valueMap.players_online)  valueMap.players_online.textContent  = Number(data.players_online).toLocaleString();
-        if (valueMap.forge_yield_24h) valueMap.forge_yield_24h.textContent = fmtForge(data.forge_yield_24h);
+      function applyData(slotMap, data) {
+        var lfb = data.last_forge_block || null;
+
+        if (slotMap.block_num)
+          slotMap.block_num.valueEl.textContent = "#" + data.current_block;
+        if (slotMap.active_worlds)
+          slotMap.active_worlds.valueEl.textContent = Number(data.active_worlds).toLocaleString();
+        if (slotMap.players_online)
+          slotMap.players_online.valueEl.textContent = Number(data.players_online).toLocaleString();
+        if (slotMap.last_finder)
+          slotMap.last_finder.valueEl.textContent = lfb ? String(lfb.finder) : "—";
+        if (slotMap.time_since)
+          slotMap.time_since.valueEl.textContent = lfb ? relTime(lfb.found_at) : "—";
+      }
+
+      function relabelOnce(slotMap) {
+        if (_relabeled) return;
+        _relabeled = true;
+        for (var slot in slotMap) {
+          if (slotMap.hasOwnProperty(slot) && NEW_LABELS[slot]) {
+            slotMap[slot].labelEl.textContent = NEW_LABELS[slot];
+          }
+        }
       }
 
       // ── Fetch ───────────────────────────────────────────────────────────────
 
-      function fetchAndApply(valueMap) {
+      function fetchAndApply(slotMap) {
         fetch(STATS_URL, HUD_FETCH_OPTS)
           .then(function (res) {
             if (!res.ok) throw new Error("HTTP " + res.status);
             return res.json();
           })
           .then(function (data) {
-            applyData(valueMap, data);
+            relabelOnce(slotMap);
+            applyData(slotMap, data);
           })
           .catch(function () {
             // Silently no-op — static placeholders remain visible.
@@ -339,41 +368,20 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       // ── Mount ───────────────────────────────────────────────────────────────
 
-      function wireHudBlocks() {
-        var valueMap = buildValueMap();
-
-        // If nothing matched at all, no point polling.
-        var foundAny = false;
-        for (var k in valueMap) {
-          if (valueMap.hasOwnProperty(k)) { foundAny = true; break; }
-        }
-        if (!foundAny) return;
-
-        fetchAndApply(valueMap);
-
-        // Re-fetch every 60 s without drift caused by exec time.
-        setInterval(function () {
-          fetchAndApply(valueMap);
-        }, POLL_INTERVAL_MS);
-      }
-
-      // Runs after one rAF (same cadence as the existing stats panel).
       // Retries once after RETRY_DELAY_MS in case the bundler DOM is still settling.
       function scheduleWire(attempt) {
         requestAnimationFrame(function () {
-          var map = buildValueMap();
+          var map = buildSlotMap();
           var hasAny = false;
           for (var k in map) { if (map.hasOwnProperty(k)) { hasAny = true; break; } }
 
           if (hasAny) {
-            var valueMap = map;
-            fetchAndApply(valueMap);
-            setInterval(function () { fetchAndApply(valueMap); }, POLL_INTERVAL_MS);
+            fetchAndApply(map);
+            setInterval(function () { fetchAndApply(map); }, POLL_INTERVAL_MS);
           } else if (attempt < 2) {
             setTimeout(function () { scheduleWire(attempt + 1); }, RETRY_DELAY_MS);
           }
-          // After two attempts with no matches, stop silently (labels were
-          // likely not present in this bundler output — console.warn already fired).
+          // After two attempts with no matches, stop silently.
         });
       }
 
