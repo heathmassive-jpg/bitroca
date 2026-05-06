@@ -416,6 +416,217 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
       });
     })();
+
+    // HUD horizontal-blocks wirer — finds the five stat blocks rendered by the
+    // bundler and populates four of them with live data.
+    (function () {
+      "use strict";
+
+      // Labels exactly as they appear (case-insensitively) in the bundled HUD.
+      // Tweak here if the bundler ever changes the copy.
+      var LABELS = {
+        blocks_24h:     "Block mined 24H",
+        active_worlds:  "Active worlds",
+        players_online: "Players online",
+        forge_yield_24h: "Forge/day yield"
+        // "Avg session" is intentionally absent — server does not track it yet.
+      };
+
+      // force no-cache here because nginx sends max-age=3600 which would freeze
+      // the HUD blocks for an hour between page loads.
+      var HUD_FETCH_OPTS = { cache: "no-cache" };
+
+      var RETRY_DELAY_MS   = 500;
+      var POLL_INTERVAL_MS = 60000;
+
+      // ── DOM walker ──────────────────────────────────────────────────────────
+
+      // Returns the text content of an element stripped of extra whitespace.
+      function normText(el) {
+        return (el.textContent || "").replace(/\s+/g, " ").trim().toLowerCase();
+      }
+
+      // Walks up the DOM from a label-matching node to find the container block,
+      // then looks for a sibling/descendant that looks like the numeric value.
+      // Heuristic order (cheapest first):
+      //   1. A descendant with a class containing "value", "stat", "number", or "count".
+      //   2. The largest-font-size descendant inside the block container.
+      //   3. Any immediate next-sibling that has no child text nodes matching a label.
+      function findValueEl(labelNode) {
+        // Walk up to find the stat block container (stop at 6 levels).
+        var container = labelNode;
+        for (var depth = 0; depth < 6; depth++) {
+          container = container.parentElement;
+          if (!container || container === document.body) return null;
+
+          // Check class-hint descendants first.
+          var classHints = ["value", "stat", "number", "count"];
+          for (var h = 0; h < classHints.length; h++) {
+            var found = container.querySelector(
+              "[class*='" + classHints[h] + "']"
+            );
+            // Reject if the found element is the label element itself or contains it.
+            if (found && found !== labelNode && !found.contains(labelNode)) {
+              return found;
+            }
+          }
+
+          // Next-sibling heuristic: siblings that are leaf-ish numeric holders.
+          var sibling = labelNode.nextElementSibling;
+          while (sibling) {
+            var sibText = normText(sibling);
+            var isLabelText = false;
+            for (var key in LABELS) {
+              if (LABELS.hasOwnProperty(key) &&
+                  sibText.indexOf(LABELS[key].toLowerCase()) !== -1) {
+                isLabelText = true;
+                break;
+              }
+            }
+            if (!isLabelText && sibText.length > 0) {
+              return sibling;
+            }
+            sibling = sibling.nextElementSibling;
+          }
+        }
+        return null;
+      }
+
+      // Scans the full DOM for elements whose text contains the given label
+      // string (case-insensitive).  Returns the first matching element, or null.
+      function findLabelNode(labelText) {
+        var lower = labelText.toLowerCase();
+        var all   = document.querySelectorAll("*");
+        for (var i = 0; i < all.length; i++) {
+          var el = all[i];
+          // Only consider leaf-like nodes whose direct text matches (skip
+          // containers that merely inherit the text from a child).
+          if (el.children.length > 3) continue;
+          var t = normText(el);
+          if (t.indexOf(lower) !== -1) {
+            return el;
+          }
+        }
+        return null;
+      }
+
+      // Attempts to build the field→valueElement map.
+      // Returns the map (may be empty if no labels matched).
+      function buildValueMap() {
+        var map = {};
+        for (var field in LABELS) {
+          if (!LABELS.hasOwnProperty(field)) continue;
+          var labelText = LABELS[field];
+          var labelNode = findLabelNode(labelText);
+          if (!labelNode) {
+            console.warn("[bitroca-hud] Could not find HUD label in DOM:", labelText);
+            continue;
+          }
+          var valueEl = findValueEl(labelNode);
+          if (!valueEl) {
+            console.warn("[bitroca-hud] Found label but could not locate its value element:", labelText);
+            continue;
+          }
+          map[field] = valueEl;
+        }
+        return map;
+      }
+
+      // ── Formatting ──────────────────────────────────────────────────────────
+
+      function fmtForge(n) {
+        var num = Number(n);
+        if (num >= 100) {
+          return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
+        }
+        return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      // ── Populate ────────────────────────────────────────────────────────────
+
+      function applyData(valueMap, data) {
+        if (valueMap.blocks_24h)      valueMap.blocks_24h.textContent      = Number(data.blocks_24h).toLocaleString();
+        if (valueMap.active_worlds)   valueMap.active_worlds.textContent   = Number(data.active_worlds).toLocaleString();
+        if (valueMap.players_online)  valueMap.players_online.textContent  = Number(data.players_online).toLocaleString();
+        if (valueMap.forge_yield_24h) valueMap.forge_yield_24h.textContent = fmtForge(data.forge_yield_24h);
+      }
+
+      // ── Fetch ───────────────────────────────────────────────────────────────
+
+      function fetchAndApply(valueMap) {
+        fetch(STATS_URL, HUD_FETCH_OPTS)
+          .then(function (res) {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            return res.json();
+          })
+          .then(function (data) {
+            applyData(valueMap, data);
+          })
+          .catch(function () {
+            // Silently no-op — static placeholders remain visible.
+          });
+      }
+
+      // ── Mount ───────────────────────────────────────────────────────────────
+
+      function wireHudBlocks() {
+        var valueMap = buildValueMap();
+
+        // If nothing matched at all, no point polling.
+        var foundAny = false;
+        for (var k in valueMap) {
+          if (valueMap.hasOwnProperty(k)) { foundAny = true; break; }
+        }
+        if (!foundAny) return;
+
+        fetchAndApply(valueMap);
+
+        // Re-fetch every 60 s without drift caused by exec time.
+        setInterval(function () {
+          fetchAndApply(valueMap);
+        }, POLL_INTERVAL_MS);
+      }
+
+      // Runs after one rAF (same cadence as the existing stats panel).
+      // Retries once after RETRY_DELAY_MS in case the bundler DOM is still settling.
+      function scheduleWire(attempt) {
+        requestAnimationFrame(function () {
+          var map = buildValueMap();
+          var hasAny = false;
+          for (var k in map) { if (map.hasOwnProperty(k)) { hasAny = true; break; } }
+
+          if (hasAny) {
+            var valueMap = map;
+            fetchAndApply(valueMap);
+            setInterval(function () { fetchAndApply(valueMap); }, POLL_INTERVAL_MS);
+          } else if (attempt < 2) {
+            setTimeout(function () { scheduleWire(attempt + 1); }, RETRY_DELAY_MS);
+          }
+          // After two attempts with no matches, stop silently (labels were
+          // likely not present in this bundler output — console.warn already fired).
+        });
+      }
+
+      // ── Hook into the same bundler swap observer ─────────────────────────────
+
+      var hudObserver = new MutationObserver(function (mutations, obs) {
+        for (var i = 0; i < mutations.length; i++) {
+          if (mutations[i].type === "childList") {
+            obs.disconnect();
+            scheduleWire(1);
+            return;
+          }
+        }
+      });
+
+      hudObserver.observe(document, { childList: true });
+
+      // Fallback: if observer misses the swap (e.g. bundler changed its approach).
+      window.addEventListener("load", function () {
+        if (document.body) scheduleWire(1);
+      }, { once: true });
+
+    })();
   </script>
 
   <script type="__bundler/manifest">
