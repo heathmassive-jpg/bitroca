@@ -105,7 +105,7 @@ nav.top {
   letter-spacing: -0.01em;
 }
 .logo img {
-  height: 56px; width: auto; display: block;
+  height: 140px; width: auto; display: block;
   filter: drop-shadow(0 4px 16px rgba(127, 119, 221, 0.4));
 }
 .nav-links {
@@ -556,6 +556,18 @@ nav.top {
 }
 
 /* ─────────── FEATURES (cards) ─────────── */
+.trailer {
+  padding: 80px 28px; border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.trailer-inner { max-width: 1100px; margin: 0 auto; text-align: center; }
+.trailer-frame {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 8px;
+  background: linear-gradient(180deg, rgba(127,119,221,0.08), rgba(127,119,221,0));
+  box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+}
 .features {
   padding: 96px 28px; border-bottom: 1px solid var(--line);
 }
@@ -865,7 +877,7 @@ footer a:hover { color: var(--text); }
   color: var(--muted); line-height: 1.7;
   max-width: 280px; margin-top: 12px;
 }
-.foot-brand .logo img { height: 44px; }
+.foot-brand .logo img { height: 110px; }
 .foot-bottom {
   grid-column: 1 / -1;
   margin-top: 30px; padding-top: 24px;
@@ -913,7 +925,8 @@ footer a:hover { color: var(--text); }
     <a href="#hud">Telemetry</a>
     <a href="#world">The World</a>
     <a href="#features">Systems</a>
-    <a href="#market">Market</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="eula.html">EULA</a>
   </div>
   <div class="nav-right">
     <span class="pill">Open beta · live</span>
@@ -960,8 +973,8 @@ footer a:hover { color: var(--text); }
         <div class="v">∞ <span class="delta">procedural</span></div>
       </div>
       <div>
-        <div class="l">FORGE price</div>
-        <div class="v">$0.00 <span class="delta">demo</span></div>
+        <div class="l">Forge reward</div>
+        <div class="v">50 <span class="delta">FORGE</span></div>
       </div>
     </div>
   </div>
@@ -981,14 +994,12 @@ footer a:hover { color: var(--text); }
     <div class="hud-grid">
       <div class="hud-card">
         <div class="lbl"><span class="dot"></span> Current chain block</div>
-        <div class="big"><span id="s1">#0</span><span class="unit">/ 0 verified</span></div>
-        <div class="sub">Hash: <b id="curHash">0x000…000</b> · finalised by <b id="curFinaliser">—</b></div>
+        <div class="big"><span id="s1">#0</span></div>
       </div>
 
       <div class="hud-card">
         <div class="lbl"><span class="dot"></span> Last forge block</div>
-        <div class="big"><span id="s4">No forge yet</span><span class="unit">awaiting first miner</span></div>
-        <div class="sub" id="s5">When a miner cracks a forge block, FORGE rewards drop here in real time.</div>
+        <div class="big"><span id="s4">No forge yet</span></div>
       </div>
     </div>
 
@@ -999,11 +1010,11 @@ footer a:hover { color: var(--text); }
       </div>
       <div class="hud-mini">
         <div class="l">Locked worlds</div>
-        <div class="v"><span class="x">0</span></div>
+        <div class="v"><span class="x" id="s6">0</span></div>
       </div>
       <div class="hud-mini">
         <div class="l">Blocks mined · 24h</div>
-        <div class="v"><span class="x">0</span></div>
+        <div class="v"><span class="x" id="s7">0</span></div>
       </div>
     </div>
 
@@ -1012,19 +1023,19 @@ footer a:hover { color: var(--text); }
         <div class="lbl"><span class="dot"></span> Forge log · last events</div>
         <div class="forge-log">
           <div class="forge-row">
-            <span class="num">#0</span>
-            <span class="who">Awaiting first forge block — be the first.</span>
+            <span class="num" id="s8">#0</span>
+            <span class="who" id="s9">Awaiting first forge block — be the first.</span>
+            <span class="when" id="s10">—</span>
+          </div>
+          <div class="forge-row">
+            <span class="num">#?</span>
+            <span class="who">Could be <b>you</b></span>
             <span class="when">—</span>
           </div>
           <div class="forge-row">
-            <span class="num">#0</span>
-            <span class="who">Your name <b>here</b> · world <b>your-claim</b></span>
+            <span class="num">#?</span>
+            <span class="who">Could be <b>you</b></span>
             <span class="when">—</span>
-          </div>
-          <div class="forge-row">
-            <span class="num">#0</span>
-            <span class="who">DEMO · <b>node-0</b> seeded the genesis world</span>
-            <span class="when">just now</span>
           </div>
         </div>
       </div>
@@ -1176,6 +1187,20 @@ footer a:hover { color: var(--text); }
   </div>
 </section>
 
+<!-- TRAILER -->
+<section class="trailer" id="trailer">
+  <div class="trailer-inner">
+    <span class="kicker" style="font-family:var(--font-m); font-size:10.5px; letter-spacing:0.2em; text-transform:uppercase; color:var(--violet); margin-bottom:18px; display:block;">▸ Trailer · v0.1</span>
+    <h3 style="font-family:var(--font-d); font-size:36px; line-height:1.1; color:var(--violet-ll); margin-bottom:24px;">See the verse in motion.</h3>
+    <div class="trailer-frame">
+      <video controls preload="metadata" playsinline poster="" style="width:100%; height:auto; display:block; border-radius:14px; background:#04020c;">
+        <source src="assets/bitroca-trailer.mp4" type="video/mp4" />
+        Your browser does not support embedded video. <a href="assets/bitroca-trailer.mp4">Download the trailer</a>.
+      </video>
+    </div>
+  </div>
+</section>
+
 <!-- FEATURES -->
 <section class="features" id="features">
   <div class="features-inner">
@@ -1269,60 +1294,6 @@ footer a:hover { color: var(--text); }
   </div>
 </section>
 
-<!-- MARKET CHART -->
-<section class="market" id="market">
-  <div class="market-inner">
-    <div class="market-copy">
-      <span class="kicker">▸ Market · CIPHER exchange</span>
-      <h3>Real prices.<br/>Real liquidity.<br/>Real consequences.</h3>
-      <p>FORGE/USD trades 24/7 on a transparent on-chain order book. Demo data shown — once open beta hits volume, this chart fills with real transactions.</p>
-      <div class="market-stats">
-        <div class="market-stat"><span class="l">FORGE / USD</span><span class="v">$0.00</span></div>
-        <div class="market-stat"><span class="l">24h volume</span><span class="v">$0</span></div>
-        <div class="market-stat"><span class="l">Open interest</span><span class="v">0</span></div>
-        <div class="market-stat"><span class="l">Active pairs</span><span class="v">0</span></div>
-      </div>
-    </div>
-
-    <div class="chart-card">
-      <div class="chart-head">
-        <div class="l"><b>FORGE / USD</b> · 24H · DEMO</div>
-        <div class="tabs">
-          <span class="tab">1H</span>
-          <span class="tab on">24H</span>
-          <span class="tab">7D</span>
-          <span class="tab">ALL</span>
-        </div>
-      </div>
-      <div class="chart-body">
-        <svg viewBox="0 0 400 280" preserveAspectRatio="none">
-          <defs>
-            <linearGradient id="cFill" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stop-color="#7f77dd" stop-opacity="0.4"/>
-              <stop offset="100%" stop-color="#7f77dd" stop-opacity="0"/>
-            </linearGradient>
-            <pattern id="cHatch" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M0 20 L20 0" stroke="rgba(127,119,221,0.05)" stroke-width="0.5"/>
-            </pattern>
-          </defs>
-          <rect width="400" height="280" fill="url(#cHatch)"/>
-          <g stroke="rgba(127,119,221,0.1)" stroke-dasharray="2 3">
-            <line x1="0" y1="60"  x2="400" y2="60"/>
-            <line x1="0" y1="140" x2="400" y2="140"/>
-            <line x1="0" y1="220" x2="400" y2="220"/>
-          </g>
-          <path fill="url(#cFill)"
-                d="M0,200 L20,180 40,190 60,160 80,170 100,140 120,150 140,120 160,135 180,100 200,115 220,80 240,98 260,70 280,88 300,55 320,72 340,46 360,60 380,38 400,52 L400,280 L0,280 Z"/>
-          <path fill="none" stroke="#a8a0ff" stroke-width="1.8"
-                d="M0,200 L20,180 40,190 60,160 80,170 100,140 120,150 140,120 160,135 180,100 200,115 220,80 240,98 260,70 280,88 300,55 320,72 340,46 360,60 380,38 400,52"/>
-          <circle cx="400" cy="52" r="4" fill="#94f0ff" stroke="#08051a" stroke-width="2"/>
-        </svg>
-        <div class="chart-axis"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>NOW</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- CTA / LAUNCH -->
 <section class="cta" id="launch">
   <div class="cta-inner">
@@ -1352,7 +1323,6 @@ footer a:hover { color: var(--text); }
       <li><a href="#hud">Telemetry</a></li>
       <li><a href="#world">The World</a></li>
       <li><a href="#features">Systems</a></li>
-      <li><a href="#market">Market</a></li>
     </ul>
   </div>
   <div>
@@ -1498,26 +1468,6 @@ footer a:hover { color: var(--text); }
   tick();
 })();
 
-/* ─── HUD CHIPHER (genesis hash flicker) ─── */
-(function hash() {
-  const el = document.getElementById('curHash');
-  const fin = document.getElementById('curFinaliser');
-  if (!el) return;
-  const chars = '0123456789abcdef';
-  function rand(n) { let s = ''; for (let i = 0; i < n; i++) s += chars[Math.floor(Math.random() * 16)]; return s; }
-  setInterval(() => {
-    el.textContent = '0x' + rand(4) + '…' + rand(4);
-  }, 1400);
-  if (fin) {
-    const names = ['core-0', 'genesis', 'demo-node', 'shard-α', 'sector-b1'];
-    let i = 0;
-    setInterval(() => {
-      fin.textContent = names[i % names.length];
-      i++;
-    }, 2200);
-  }
-})();
-
 /* ─── LIVE STATS WIRER ─── */
 (function () {
   "use strict";
@@ -1536,7 +1486,7 @@ footer a:hover { color: var(--text); }
   }
 
   function mountWirer() {
-    var ids = ["s1", "s2", "s3", "s4", "s5"];
+    var ids = ["s1", "s2", "s3", "s4", "s6", "s7", "s8", "s9", "s10"];
     var els = {};
     var anyFound = false;
     for (var i = 0; i < ids.length; i++) {
@@ -1562,6 +1512,17 @@ footer a:hover { color: var(--text); }
         if (e.s3) e.s3.textContent = Number(data.players_online || 0).toLocaleString();
         if (e.s4) e.s4.textContent = (lfb && lfb.finder) || "—";
         if (e.s5) e.s5.textContent = relTime((lfb && lfb.found_at) || null);
+        if (e.s6) e.s6.textContent = Number(data.locked_worlds || 0).toLocaleString();
+        if (e.s7) e.s7.textContent = Number(data.blocks_24h || 0).toLocaleString();
+        if (e.s8) e.s8.textContent = "#" + Number((lfb && lfb.block_number) || 0).toLocaleString();
+        if (e.s9) {
+          if (lfb && lfb.finder) {
+            e.s9.textContent = lfb.finder + " · world " + (lfb.world_name || "—");
+          } else {
+            e.s9.textContent = "Awaiting first forge block — be the first.";
+          }
+        }
+        if (e.s10) e.s10.textContent = relTime((lfb && lfb.found_at) || null);
         if (!_loggedLive) { _loggedLive = true; console.info("[bitroca-hud] live"); }
       })
       .catch(function () {});
