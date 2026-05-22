@@ -1254,8 +1254,8 @@ footer a:hover { color: var(--text); }
           <div class="v">∞ <span class="delta">procedural</span></div>
         </div>
         <div>
-          <div class="l">FORGE price</div>
-          <div class="v">$0.00 <span class="delta">demo</span></div>
+          <div class="l">Current block</div>
+          <div class="v"><span id="s1b">#0</span> <span class="delta">live</span></div>
         </div>
       </div>
     </div>
@@ -1300,12 +1300,12 @@ footer a:hover { color: var(--text); }
     <div class="hud-grid">
       <div class="hud-card">
         <div class="lbl"><span class="dot"></span> Current chain block</div>
-        <div class="big"><span id="s1">#0</span><span class="unit">awaiting genesis</span></div>
+        <div class="big"><span id="s1">#0</span></div>
         <div class="sub">First verified block drops here when open beta begins minting.</div>
       </div>
       <div class="hud-card">
         <div class="lbl"><span class="dot"></span> Last forge block</div>
-        <div class="big"><span id="s4">No forge yet</span><span class="unit">awaiting first miner</span></div>
+        <div class="big"><span id="s4">No forge yet</span></div>
         <div class="sub">When a miner cracks a forge block, the FORGE reward drops here in real time.</div>
       </div>
     </div>
@@ -1351,19 +1351,9 @@ footer a:hover { color: var(--text); }
         </div>
       </div>
       <div class="hud-card">
-        <div class="lbl"><span class="dot"></span> Network signal · 24h</div>
-        <svg viewBox="0 0 400 180" preserveAspectRatio="none" style="width:100%; height: 180px; display:block; margin-top: 6px;">
-          <g stroke="rgba(127,119,221,0.12)" stroke-dasharray="2 4">
-            <line x1="0" y1="40" x2="400" y2="40"/>
-            <line x1="0" y1="90" x2="400" y2="90"/>
-            <line x1="0" y1="140" x2="400" y2="140"/>
-          </g>
-          <line x1="0" y1="165" x2="400" y2="165" stroke="#a8a0ff" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.45"/>
-          <text x="200" y="95" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="rgba(214,208,255,0.5)" letter-spacing="3">NO DATA · STANDBY</text>
-        </svg>
-        <div style="font-family:var(--font-m); font-size:10.5px; color:var(--muted); letter-spacing:0.08em; margin-top:8px; display:flex; justify-content:space-between;">
-          <span>T-24h</span><span>T-12h</span><span>NOW</span>
-        </div>
+        <div class="lbl"><span class="dot"></span> Network signal · live</div>
+        <div class="big"><span id="s3b">0</span></div>
+        <div class="sub">Players online right now. Updates every 60 seconds.</div>
       </div>
     </div>
   </div>
@@ -2423,7 +2413,7 @@ footer a:hover { color: var(--text); }
   }
 
   function mountWirer() {
-    var ids = ["s1", "s2", "s3", "s4", "s6", "s7", "s8", "s9", "s10"];
+    var ids = ["s1", "s1b", "s2", "s3", "s3b", "s4", "s6", "s7", "s8", "s9", "s10"];
     var els = {};
     var anyFound = false;
     for (var i = 0; i < ids.length; i++) {
@@ -2444,9 +2434,13 @@ footer a:hover { color: var(--text); }
       .then(function (data) {
         var lfb = (data.last_forge_block) || null;
         var e = _els;
-        if (e.s1) e.s1.textContent = "#" + Number(data.current_block || 0).toLocaleString();
+        var blockStr = "#" + Number(data.current_block || 0).toLocaleString();
+        if (e.s1) e.s1.textContent = blockStr;
+        if (e.s1b) e.s1b.textContent = blockStr;
         if (e.s2) e.s2.textContent = Number(data.active_worlds || 0).toLocaleString();
-        if (e.s3) e.s3.textContent = Number(data.players_online || 0).toLocaleString();
+        var playersStr = Number(data.players_online || 0).toLocaleString();
+        if (e.s3) e.s3.textContent = playersStr;
+        if (e.s3b) e.s3b.textContent = playersStr;
         if (e.s4) e.s4.textContent = (lfb && lfb.finder) || "—";
         if (e.s5) e.s5.textContent = relTime((lfb && lfb.found_at) || null);
         if (e.s6) e.s6.textContent = Number(data.locked_worlds || 0).toLocaleString();
