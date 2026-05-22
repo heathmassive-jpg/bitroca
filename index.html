@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Bitroca — Break &amp; Verify keeps the world alive.</title>
-<meta name="description" content="A persistent multiplayer voxel world with a live economy. Open beta." />
+<title>BITROCA // transmission received</title>
+<meta name="description" content="A persistent multiplayer voxel world with a live, on-chain economy. Break and verify keeps the world alive." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet" />
@@ -12,11 +12,11 @@
 :root {
   --font-d: 'Space Grotesk', system-ui, sans-serif;
   --font-m: 'JetBrains Mono', ui-monospace, monospace;
+  --font-px: 'VT323', monospace;
 
-  /* deep space palette */
-  --bg-0: #04020c;        /* void */
-  --bg-1: #08051a;        /* deep space */
-  --bg-2: #0e0a26;        /* nebula floor */
+  --bg-0: #04020c;
+  --bg-1: #08051a;
+  --bg-2: #0e0a26;
   --bg-3: #1a1340;
 
   --violet:    #7f77dd;
@@ -40,25 +40,23 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { background: var(--bg-0); color: var(--text); }
+html, body { background: var(--bg-0); color: var(--text); cursor: none; }
 body {
-  font-family: var(--font-m);
-  font-size: 14px; line-height: 1.6;
-  overflow-x: hidden;
-  position: relative;
+  font-family: var(--font-m); font-size: 14px; line-height: 1.6;
+  overflow-x: hidden; position: relative;
 }
+a, button { cursor: none; }
 
-/* ─────────── COSMIC BACKGROUND ─────────── */
+/* ─────────── COSMIC BACKDROP ─────────── */
 .space-bg {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse at 20% 10%, rgba(127, 119, 221, 0.18), transparent 50%),
-    radial-gradient(ellipse at 85% 80%, rgba(89, 229, 255, 0.10), transparent 55%),
+    radial-gradient(ellipse at 20% 8%, rgba(127, 119, 221, 0.22), transparent 50%),
+    radial-gradient(ellipse at 88% 78%, rgba(89, 229, 255, 0.12), transparent 55%),
     radial-gradient(ellipse at 50% 110%, rgba(255, 94, 200, 0.10), transparent 55%),
-    radial-gradient(circle at 50% 50%, var(--bg-1), var(--bg-0) 70%);
+    radial-gradient(circle at 50% 50%, var(--bg-1), var(--bg-0) 75%);
 }
 .space-bg::after {
-  /* fine grid */
   content: ''; position: absolute; inset: 0;
   background-image:
     linear-gradient(rgba(127, 119, 221, 0.04) 1px, transparent 1px),
@@ -69,54 +67,158 @@ body {
 }
 canvas#stars {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  width: 100%; height: 100%;
+  width: 100vw; height: 100vh;
 }
 
-/* scanline + noise */
-body::before {
-  content: ''; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+/* scanlines + noise + CRT vignette */
+.crt-overlay { position: fixed; inset: 0; z-index: 90; pointer-events: none; }
+.crt-overlay::before {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0 1px, transparent 1px 3px);
+  mix-blend-mode: overlay;
+}
+.crt-overlay::after {
+  content: ''; position: absolute; inset: 0;
+  box-shadow: inset 0 0 200px rgba(0,0,0,0.65), inset 0 0 60px rgba(0,0,0,0.4);
+  pointer-events: none;
+}
+.noise-overlay {
+  position: fixed; inset: 0; z-index: 91; pointer-events: none; opacity: 0.05; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/></svg>");
+}
+
+main, nav, footer, .marquee, .transmission { position: relative; z-index: 5; }
+
+/* ─────────── CUSTOM CURSOR ─────────── */
+.cursor {
+  position: fixed; top: 0; left: 0; z-index: 1000; pointer-events: none;
+  width: 24px; height: 24px;
+  transform: translate(-50%, -50%);
+  transition: opacity .2s;
+}
+.cursor svg { display: block; width: 100%; height: 100%; }
+.cursor-coords {
+  position: absolute; top: 16px; left: 16px;
+  font-family: var(--font-m); font-size: 9px; font-weight: 600;
+  color: var(--teal-l); letter-spacing: 0.1em;
+  white-space: nowrap;
+  text-shadow: 0 0 4px rgba(89, 229, 255, 0.6);
+}
+.cursor.hover svg { transform: scale(1.4); transition: transform .15s; }
+@media (hover: none) {
+  html, body, a, button { cursor: auto; }
+  .cursor { display: none; }
+}
+
+/* ─────────── BOOT SEQUENCE ─────────── */
+.boot {
+  position: fixed; inset: 0; z-index: 999;
+  background: var(--bg-0);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 24px;
+  font-family: var(--font-m); color: var(--teal-l);
+  transition: opacity .6s ease;
+}
+.boot.gone { opacity: 0; pointer-events: none; }
+.boot::before {
+  content: ''; position: absolute; inset: 0;
   background:
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px);
-  mix-blend-mode: overlay;
+    radial-gradient(circle at 50% 50%, rgba(127, 119, 221, 0.15), transparent 70%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 3px);
+  pointer-events: none;
 }
-body::after {
-  content: ''; position: fixed; inset: 0; z-index: 1; pointer-events: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='1'/></svg>");
-  opacity: 0.04;
-  mix-blend-mode: overlay;
+.boot-frame {
+  position: relative; z-index: 1;
+  width: min(560px, 86vw);
+  border: 1px solid var(--line-3);
+  background: rgba(8, 5, 26, 0.6);
+  padding: 20px 24px;
+  font-size: 13px; line-height: 1.85;
+  box-shadow: 0 0 60px rgba(127, 119, 221, 0.3),
+              inset 0 0 30px rgba(89, 229, 255, 0.05);
 }
+.boot-frame .row { display: flex; gap: 12px; }
+.boot-frame .ok  { color: var(--teal-l); }
+.boot-frame .err { color: var(--amber); }
+.boot-frame .typ { color: var(--violet-ll); }
+.boot-frame .head {
+  font-family: var(--font-d); font-weight: 700; font-size: 18px;
+  color: var(--violet-ll); letter-spacing: 0.04em;
+  text-transform: uppercase; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 10px;
+}
+.boot-frame .head::before {
+  content: ''; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--teal-l); box-shadow: 0 0 12px var(--teal-l);
+  animation: blink 1.2s infinite;
+}
+.boot-frame .skip {
+  position: absolute; bottom: -32px; left: 0; right: 0;
+  text-align: center;
+  font-family: var(--font-m); font-size: 10px;
+  color: var(--muted); letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.boot-frame .skip b { color: var(--violet-l); }
+.caret { display: inline-block; background: var(--teal-l); width: 6px; height: 1em; vertical-align: middle; margin-left: 4px; animation: caret 1s steps(2) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+@keyframes blink { 0%, 60% { opacity: 1; } 80%, 100% { opacity: 0.3; } }
 
-main, nav, footer { position: relative; z-index: 2; }
+/* ─────────── TOP MARQUEE / BROADCAST ─────────── */
+.broadcast {
+  height: 26px; display: flex; align-items: center;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, rgba(127,119,221,0.05), rgba(89,229,255,0.05), rgba(127,119,221,0.05));
+  font-family: var(--font-m); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.16em; color: var(--violet-ll);
+  text-transform: uppercase;
+  overflow: hidden; position: sticky; top: 0; z-index: 60;
+}
+.broadcast-track {
+  display: flex; gap: 48px;
+  white-space: nowrap;
+  animation: broadcastScroll 80s linear infinite;
+  padding-left: 48px;
+}
+@keyframes broadcastScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.broadcast b { color: var(--teal-l); }
+.broadcast span.amber { color: var(--amber); }
 
 /* ─────────── NAV ─────────── */
 nav.top {
-  position: sticky; top: 0; z-index: 50;
+  position: sticky; top: 26px; z-index: 55;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 28px;
-  background: rgba(8, 5, 26, 0.78);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  padding: 16px 28px;
+  background: rgba(8, 5, 26, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--line);
 }
 .logo {
   display: inline-flex; align-items: center; gap: 12px;
   text-decoration: none; color: var(--violet-ll);
   font-family: var(--font-d); font-weight: 700; font-size: 18px;
-  letter-spacing: -0.01em;
 }
 .logo img {
-  height: 140px; width: auto; display: block;
+  height: 56px; width: auto; display: block;
   filter: drop-shadow(0 4px 16px rgba(127, 119, 221, 0.4));
 }
 .nav-links {
   display: flex; gap: 28px; align-items: center;
-  font-family: var(--font-m); font-size: 12px; letter-spacing: 0.06em;
+  font-family: var(--font-m); font-size: 11.5px; letter-spacing: 0.08em;
 }
 .nav-links a {
   color: var(--muted); text-decoration: none;
   text-transform: uppercase; transition: color .2s;
+  position: relative; padding-bottom: 2px;
+}
+.nav-links a::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -4px;
+  height: 1px; background: var(--violet-l); transform: scaleX(0);
+  transform-origin: left; transition: transform .25s;
 }
 .nav-links a:hover { color: var(--violet-l); }
+.nav-links a:hover::after { transform: scaleX(1); }
 .nav-right { display: flex; align-items: center; gap: 14px; }
 .pill {
   display: inline-flex; align-items: center; gap: 8px;
@@ -131,15 +233,14 @@ nav.top {
   background: var(--teal-l); box-shadow: 0 0 10px var(--teal-l);
   animation: blink 1.6s infinite;
 }
-@keyframes blink { 0%, 60% { opacity: 1; } 80%, 100% { opacity: 0.3; } }
 
 .btn {
   display: inline-flex; align-items: center; gap: 8px;
   font-family: var(--font-m); font-weight: 600; font-size: 12px;
   letter-spacing: 0.08em; text-transform: uppercase;
-  padding: 10px 18px; border-radius: 6px;
+  padding: 11px 20px; border-radius: 6px;
   text-decoration: none; transition: all .2s;
-  cursor: pointer; border: 1px solid transparent;
+  border: 1px solid transparent;
 }
 .btn-primary {
   background: linear-gradient(180deg, #5b52c8, #463db0);
@@ -162,113 +263,128 @@ nav.top {
   background: rgba(127, 119, 221, 0.06);
 }
 
-/* ─────────── TICKER ─────────── */
-.ticker {
-  display: flex; overflow: hidden; gap: 0;
-  border-bottom: 1px solid var(--line);
-  background: rgba(8, 5, 26, 0.6);
-  font-family: var(--font-m); font-size: 11px;
-}
-.ticker-track {
-  display: flex; gap: 36px; padding: 10px 0;
-  animation: tickerScroll 120s linear infinite;
-  white-space: nowrap;
-}
-@keyframes tickerScroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-.ticker-item {
-  display: inline-flex; align-items: center; gap: 8px;
-  color: var(--muted);
-}
-.ticker-item b { color: var(--violet-ll); font-weight: 600; }
-.ticker-item .sym { color: var(--teal-l); letter-spacing: 0.1em; }
-
 /* ─────────── HERO ─────────── */
 .hero {
   position: relative;
-  padding: 96px 28px 80px;
-  overflow: hidden;
+  padding: 60px 28px 80px;
   border-bottom: 1px solid var(--line);
+  overflow: hidden;
 }
-.hero-inner {
-  max-width: 1200px; margin: 0 auto;
-  display: flex; flex-direction: column; align-items: center;
-  text-align: center;
-  position: relative; z-index: 2;
+.hero-grid {
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: 1.1fr 1fr;
+  gap: 60px; align-items: center;
+  position: relative; z-index: 3;
 }
-.hero-badge {
+.hero-left {
+  position: relative;
+}
+.hero-tag {
   display: inline-flex; align-items: center; gap: 10px;
   font-family: var(--font-m); font-size: 10.5px;
   letter-spacing: 0.18em; text-transform: uppercase;
   padding: 7px 14px; border: 1px solid var(--line-2);
   border-radius: 30px; color: var(--amber);
   background: rgba(240, 184, 74, 0.04);
-  margin-bottom: 32px;
+  margin-bottom: 28px;
 }
-.hero-badge .dot {
+.hero-tag .dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--amber); box-shadow: 0 0 12px var(--amber);
   animation: blink 1.6s infinite;
 }
-.hero h1 {
+
+.wordmark {
   font-family: var(--font-d); font-weight: 700;
-  font-size: clamp(54px, 8vw, 120px);
-  line-height: 0.94; letter-spacing: -0.04em;
-  margin-bottom: 28px;
-  text-shadow: 0 0 40px rgba(127, 119, 221, 0.3);
+  font-size: clamp(86px, 13vw, 220px); line-height: 0.78;
+  letter-spacing: -0.06em;
+  color: var(--violet-ll);
+  margin-bottom: 8px;
+  text-shadow: 0 0 50px rgba(127, 119, 221, 0.4);
+  position: relative; display: inline-block;
+  -webkit-text-stroke: 0;
 }
-.hero h1 .a {
-  color: var(--violet);
-  background: linear-gradient(180deg, var(--violet-l), var(--violet));
-  -webkit-background-clip: text; background-clip: text;
-  -webkit-text-fill-color: transparent;
+.wordmark .glitch {
+  position: relative; display: inline-block;
+  cursor: none;
 }
-.hero h1 .b {
+.wordmark .glitch::before,
+.wordmark .glitch::after {
+  content: attr(data-text);
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  opacity: 0;
+}
+.wordmark .glitch::before {
+  color: var(--magenta); transform: translate(-3px, 0);
+  clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+}
+.wordmark .glitch::after {
+  color: var(--teal-l); transform: translate(3px, 0);
+  clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+}
+.wordmark:hover .glitch::before { opacity: 1; animation: glitchA 0.8s steps(8) infinite; }
+.wordmark:hover .glitch::after  { opacity: 1; animation: glitchB 0.8s steps(8) infinite; }
+@keyframes glitchA {
+  0%   { transform: translate(-3px, 0); }
+  20%  { transform: translate(2px, -1px); }
+  40%  { transform: translate(-4px, 1px); }
+  60%  { transform: translate(1px, -2px); }
+  80%  { transform: translate(-2px, 0); }
+  100% { transform: translate(-3px, 0); }
+}
+@keyframes glitchB {
+  0%   { transform: translate(3px, 0); }
+  20%  { transform: translate(-2px, 1px); }
+  40%  { transform: translate(4px, -1px); }
+  60%  { transform: translate(-1px, 2px); }
+  80%  { transform: translate(2px, 0); }
+  100% { transform: translate(3px, 0); }
+}
+
+.hero-headline {
+  font-family: var(--font-d); font-weight: 500;
+  font-size: clamp(22px, 2.6vw, 32px);
+  letter-spacing: -0.01em; line-height: 1.15;
+  color: var(--text); margin: 22px 0 24px;
+  max-width: 560px;
+}
+.hero-headline .verify {
   background: linear-gradient(180deg, var(--teal-l), var(--teal));
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
+  font-weight: 700;
 }
-.hero h1 .amp {
-  color: var(--muted-2); font-weight: 400;
-  font-style: italic;
+.hero-headline .break {
+  background: linear-gradient(180deg, var(--violet-l), var(--violet));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
 }
-.hero h1 .keeps {
-  display: block;
-  font-size: 0.42em;
-  font-weight: 500;
-  color: var(--text);
-  letter-spacing: 0.01em;
-  margin-top: 22px;
-  line-height: 1.2;
+.hero-headline .alive {
+  color: var(--amber); font-weight: 700; position: relative;
 }
-.hero h1 .keeps .alive {
-  color: var(--amber);
-  position: relative;
+.hero-headline .alive::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 1px;
+  height: 2px; background: var(--amber); opacity: 0.7;
+  box-shadow: 0 0 8px var(--amber);
 }
-.hero h1 .keeps .alive::after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: -2px;
-  height: 2px; background: var(--amber);
-  box-shadow: 0 0 10px var(--amber);
-}
+
 .hero-sub {
-  font-family: var(--font-m); font-size: 14.5px;
-  color: var(--muted); line-height: 1.7;
-  max-width: 580px; margin: 0 auto 36px;
+  font-family: var(--font-m); font-size: 13.5px;
+  color: var(--muted); line-height: 1.75;
+  max-width: 480px; margin-bottom: 32px;
 }
-.hero-ctas {
-  display: flex; gap: 12px; flex-wrap: wrap;
-  justify-content: center; margin-bottom: 48px;
-}
+
+.hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px; }
+
 .hero-meta {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(8, 5, 26, 0.5);
+  background: rgba(8, 5, 26, 0.55);
   backdrop-filter: blur(8px);
-  width: 100%; max-width: 720px;
-  text-align: left;
+  max-width: 600px;
   overflow: hidden;
 }
 .hero-meta > div {
@@ -287,7 +403,7 @@ nav.top {
   text-transform: uppercase;
 }
 .hero-meta .v {
-  font-family: var(--font-d); font-size: 22px;
+  font-family: var(--font-d); font-size: 20px;
   font-weight: 700; color: var(--violet-ll);
   margin-top: 4px;
 }
@@ -296,88 +412,173 @@ nav.top {
   font-weight: 500; margin-left: 6px; color: var(--teal-l);
 }
 
-/* HERO planet visual */
-.hero-planet {
-  position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(820px, 90vw); aspect-ratio: 1;
-  z-index: 1; pointer-events: none;
-  opacity: 0.55;
-}
-.hero-planet .ring {
-  position: absolute; inset: 0;
-  border: 1px solid var(--line-2);
-  border-radius: 50%;
-  animation: spin 120s linear infinite;
-}
-.hero-planet .ring.r2 {
-  inset: 8%; border-style: dashed;
-  border-color: var(--line);
-  animation-duration: 200s;
-  animation-direction: reverse;
-}
-.hero-planet .ring.r3 {
-  inset: 18%; border-color: var(--line);
-}
-.hero-planet .core {
-  position: absolute; inset: 32%; border-radius: 50%;
+/* ─────────── HERO GALAXY STAGE (live procedural galaxy) ─────────── */
+.voxel-chunk, .galaxy-stage {
+  position: relative; aspect-ratio: 1;
+  border-radius: 14px;
   background:
-    radial-gradient(circle at 30% 25%, rgba(127, 119, 221, 0.25), transparent 55%),
-    radial-gradient(circle at 70% 80%, rgba(89, 229, 255, 0.15), transparent 60%),
-    radial-gradient(circle at 50% 50%, rgba(70, 61, 176, 0.6), rgba(8, 5, 26, 0.85) 70%);
-  box-shadow: 0 0 80px rgba(127, 119, 221, 0.3),
-              inset 0 0 60px rgba(0, 0, 0, 0.6);
-  border: 1px solid var(--line-3);
-  animation: spin 240s linear infinite;
+    radial-gradient(circle at 50% 50%, rgba(127, 119, 221, 0.08), transparent 70%);
+  overflow: hidden;
 }
-.hero-planet .core::before {
-  /* surface grid */
-  content: ''; position: absolute; inset: 0;
-  border-radius: 50%;
-  background:
-    repeating-linear-gradient(0deg, transparent 0 18px, rgba(127, 119, 221, 0.06) 18px 19px),
-    repeating-linear-gradient(90deg, transparent 0 18px, rgba(127, 119, 221, 0.06) 18px 19px);
-  mask-image: radial-gradient(circle, #000 50%, transparent 70%);
-  -webkit-mask-image: radial-gradient(circle, #000 50%, transparent 70%);
+.voxel-chunk::before, .galaxy-stage::before {
+  content: ''; position: absolute; top: 8px; left: 8px;
+  width: 18px; height: 18px;
+  border-top: 1px solid var(--violet); border-left: 1px solid var(--violet);
+  z-index: 5;
 }
-.hero-planet .ring-dot {
-  position: absolute; width: 8px; height: 8px;
-  background: var(--teal-l); border-radius: 50%;
-  box-shadow: 0 0 12px var(--teal-l);
-  top: 50%; left: -4px; margin-top: -4px;
+.voxel-chunk::after, .galaxy-stage::after {
+  content: ''; position: absolute; bottom: 8px; right: 8px;
+  width: 18px; height: 18px;
+  border-bottom: 1px solid var(--violet); border-right: 1px solid var(--violet);
+  z-index: 5;
 }
-.hero-planet .ring-dot.d2 {
-  background: var(--magenta); box-shadow: 0 0 12px var(--magenta);
-  top: 8%; left: 50%; margin-left: -4px;
+.galaxy-stage canvas {
+  width: 100%; height: 100%; display: block;
+  image-rendering: auto;
 }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.chunk-badge {
+  position: absolute; top: 14px; left: 14px; z-index: 6;
+  font-family: var(--font-m); font-size: 9.5px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--teal-l);
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 10px;
+  background: rgba(4, 2, 12, 0.6);
+  border: 1px solid var(--line-2); border-radius: 4px;
+}
+.chunk-badge::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--teal-l); box-shadow: 0 0 8px var(--teal-l);
+  animation: blink 1.4s infinite;
+}
+.chunk-coords {
+  position: absolute; bottom: 14px; left: 14px; z-index: 6;
+  font-family: var(--font-m); font-size: 9.5px;
+  color: var(--muted-2); letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  background: rgba(4, 2, 12, 0.5);
+  border: 1px solid var(--line);
+}
+.chunk-counter {
+  position: absolute; top: 14px; right: 14px; z-index: 6;
+  font-family: var(--font-m); font-size: 10px;
+  color: var(--muted); letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  background: rgba(4, 2, 12, 0.6);
+  border: 1px solid var(--line-2); border-radius: 4px;
+}
+.chunk-counter b {
+  color: var(--amber); font-weight: 700; margin-left: 4px;
+}
+.chunk-help {
+  position: absolute; bottom: 14px; right: 14px; z-index: 6;
+  font-family: var(--font-m); font-size: 9.5px;
+  letter-spacing: 0.1em; color: var(--muted-2);
+  text-transform: uppercase;
+}
+.chunk-help b { color: var(--violet-l); }
+.chunk-svg { width: 100%; height: 100%; display: block; }
+.vox-floater {
+  font-family: var(--font-m); font-size: 11px; font-weight: 700;
+  fill: var(--amber);
+  animation: voxPop 900ms ease-out forwards;
+}
+@keyframes voxPop {
+  0%   { opacity: 0; transform: translateY(0) scale(0.6); }
+  30%  { opacity: 1; transform: translateY(-10px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-26px) scale(0.85); }
+}
+.vox-shake { animation: voxShake 0.2s; }
+@keyframes voxShake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-1px, 1px); }
+  50% { transform: translate(1px, -1px); }
+  75% { transform: translate(-1px, 0); }
+}
 
-/* ─────────── HUD STATS PANEL (cosmic terminal) ─────────── */
-.hud-section {
-  padding: 60px 28px;
+/* ─────────── SIDE TRANSMISSION FEED ─────────── */
+.transmission {
+  position: fixed; right: 12px; top: 120px; bottom: 200px;
+  width: 168px; z-index: 7; pointer-events: none;
+  display: flex; flex-direction: column; gap: 0;
+  font-family: var(--font-m); font-size: 9.5px;
+  color: var(--muted-2); letter-spacing: 0.04em;
+  overflow: hidden;
+  border-left: 1px solid var(--line);
+  padding-left: 10px;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+}
+.transmission .head {
+  font-family: var(--font-m); font-size: 9px; font-weight: 700;
+  color: var(--violet); letter-spacing: 0.2em;
+  text-transform: uppercase; margin-bottom: 8px;
+  position: sticky; top: 0;
+}
+.transmission .feed {
+  display: flex; flex-direction: column; gap: 4px;
+  animation: feedScroll 38s linear infinite;
+}
+@keyframes feedScroll {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-50%); }
+}
+.transmission .line { white-space: nowrap; line-height: 1.5; }
+.transmission .line b { color: var(--teal-l); }
+.transmission .line.violet { color: var(--violet-l); }
+.transmission .line.amber  { color: var(--amber); }
+
+@media (max-width: 1180px) { .transmission { display: none; } }
+
+/* ─────────── SECTION MARQUEE (between sections) ─────────── */
+.marquee {
+  height: 56px; display: flex; align-items: center;
+  border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
+  background:
+    linear-gradient(90deg, rgba(127,119,221,0.06), rgba(89,229,255,0.04), rgba(255,94,200,0.05), rgba(127,119,221,0.06));
+  overflow: hidden;
 }
-.hud-inner {
-  max-width: 1200px; margin: 0 auto;
+.marquee-track {
+  display: flex; gap: 56px; white-space: nowrap;
+  font-family: var(--font-d); font-weight: 700;
+  font-size: 28px; letter-spacing: -0.02em;
+  animation: marquee 30s linear infinite;
+  padding-left: 56px;
 }
+.marquee-track .a { color: var(--violet-ll); }
+.marquee-track .b { color: var(--teal-l); }
+.marquee-track .c { color: var(--amber); }
+.marquee-track .star { color: var(--violet); margin: 0 6px; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ─────────── TELEMETRY HUD ─────────── */
+.hud-section { padding: 88px 28px; border-bottom: 1px solid var(--line); }
+.hud-inner { max-width: 1400px; margin: 0 auto; }
 .hud-head {
   display: flex; align-items: baseline; justify-content: space-between;
-  margin-bottom: 32px; flex-wrap: wrap; gap: 16px;
+  margin-bottom: 36px; flex-wrap: wrap; gap: 16px;
 }
-.hud-head .kicker {
+.kicker {
   font-family: var(--font-m); font-size: 10.5px;
-  letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--violet);
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--violet); display: inline-flex; align-items: center; gap: 10px;
+  margin-bottom: 14px;
 }
+.kicker::before { content: ''; width: 24px; height: 1px; background: var(--violet); }
 .hud-head h2 {
   font-family: var(--font-d); font-weight: 700;
-  font-size: clamp(28px, 4vw, 44px);
-  letter-spacing: -0.02em; line-height: 1;
-  color: var(--violet-ll);
+  font-size: clamp(36px, 5.2vw, 64px);
+  letter-spacing: -0.035em; line-height: 0.98;
+  color: var(--violet-ll); max-width: 720px;
 }
+.hud-head h2 em { font-style: italic; color: var(--teal-l); font-weight: 500; }
 .hud-head .meta {
   font-family: var(--font-m); font-size: 11px;
   color: var(--muted); letter-spacing: 0.06em;
+  text-align: right; line-height: 1.7;
 }
 .hud-head .meta b { color: var(--teal-l); font-weight: 500; }
 
@@ -392,23 +593,14 @@ nav.top {
   background: rgba(8, 5, 26, 0.55);
   backdrop-filter: blur(8px);
   padding: 24px;
-  position: relative;
-  overflow: hidden;
+  position: relative; overflow: hidden;
 }
-.hud-card::before {
-  content: ''; position: absolute;
-  top: 12px; right: 12px;
-  width: 16px; height: 16px;
-  border-top: 1px solid var(--violet);
-  border-right: 1px solid var(--violet);
+.hud-card::before, .hud-card::after {
+  content: ''; position: absolute; width: 16px; height: 16px;
+  border-color: var(--violet);
 }
-.hud-card::after {
-  content: ''; position: absolute;
-  bottom: 12px; left: 12px;
-  width: 16px; height: 16px;
-  border-bottom: 1px solid var(--violet);
-  border-left: 1px solid var(--violet);
-}
+.hud-card::before { top: 10px; right: 10px; border-top: 1px solid var(--violet); border-right: 1px solid var(--violet); }
+.hud-card::after  { bottom: 10px; left: 10px; border-bottom: 1px solid var(--violet); border-left: 1px solid var(--violet); }
 .hud-card .lbl {
   font-family: var(--font-m); font-size: 10px;
   letter-spacing: 0.18em; text-transform: uppercase;
@@ -429,8 +621,7 @@ nav.top {
 }
 .hud-card .big .unit {
   font-size: 0.4em; color: var(--muted);
-  font-weight: 500; margin-left: 8px;
-  letter-spacing: 0;
+  font-weight: 500; margin-left: 8px; letter-spacing: 0;
 }
 .hud-card .sub {
   font-family: var(--font-m); font-size: 11.5px;
@@ -440,9 +631,8 @@ nav.top {
 
 .hud-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
-  margin-top: 16px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-top: 16px;
 }
 .hud-mini {
   border: 1px solid var(--line);
@@ -462,54 +652,53 @@ nav.top {
 }
 .hud-mini .v .x { color: var(--teal-l); }
 
-/* the forge log card */
+/* forge log */
 .forge-log {
   font-family: var(--font-m); font-size: 12px;
-  display: grid; gap: 10px;
+  display: grid; gap: 8px; margin-top: 8px;
 }
 .forge-row {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 16px; padding: 10px 0;
+  gap: 16px; padding: 8px 0;
   border-bottom: 1px dashed var(--line);
   align-items: baseline;
 }
 .forge-row:last-child { border-bottom: none; }
-.forge-row .num {
-  color: var(--violet); font-weight: 600;
-  font-feature-settings: "tnum";
-}
+.forge-row .num { color: var(--violet); font-weight: 600; }
 .forge-row .who { color: var(--text); }
 .forge-row .who b { color: var(--amber); font-weight: 600; }
 .forge-row .when { color: var(--muted-2); font-size: 10.5px; letter-spacing: 0.05em; }
 
-/* ─────────── ORBITAL WORLD MAP ─────────── */
+/* ─────────── ORBITAL MAP ─────────── */
 .orbital {
-  padding: 80px 28px; border-bottom: 1px solid var(--line);
+  padding: 88px 28px; border-bottom: 1px solid var(--line);
   position: relative;
 }
 .orbital-inner {
-  max-width: 1200px; margin: 0 auto;
+  max-width: 1400px; margin: 0 auto;
   display: grid; grid-template-columns: 1fr 1.4fr;
   gap: 48px; align-items: center;
 }
 .orbital-copy h3 {
   font-family: var(--font-d); font-weight: 700;
-  font-size: clamp(28px, 3.6vw, 42px);
-  letter-spacing: -0.02em; line-height: 1.05;
-  color: var(--violet-ll); margin-bottom: 18px;
+  font-size: clamp(36px, 4.8vw, 56px);
+  letter-spacing: -0.035em; line-height: 0.98;
+  color: var(--violet-ll); margin-bottom: 22px;
 }
+.orbital-copy h3 em { font-style: italic; color: var(--magenta); font-weight: 500; }
 .orbital-copy p {
   font-family: var(--font-m); font-size: 13.5px;
   color: var(--muted); line-height: 1.75;
-  margin-bottom: 18px;
+  margin-bottom: 18px; max-width: 480px;
 }
 .orbital-copy ul {
   list-style: none; padding: 0; margin: 24px 0 0;
+  max-width: 480px;
 }
 .orbital-copy li {
   font-family: var(--font-m); font-size: 12px;
-  padding: 10px 0; border-top: 1px dashed var(--line);
+  padding: 12px 0; border-top: 1px dashed var(--line);
   display: flex; align-items: center; justify-content: space-between;
   color: var(--muted);
 }
@@ -519,14 +708,13 @@ nav.top {
 .orbital-stage {
   position: relative; aspect-ratio: 1;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   background:
     radial-gradient(circle at 50% 50%, rgba(127, 119, 221, 0.08), transparent 65%),
     rgba(4, 2, 12, 0.7);
   overflow: hidden;
 }
 .orbital-stage::before {
-  /* corner brackets */
   content: ''; position: absolute; top: 12px; left: 12px;
   width: 24px; height: 24px;
   border-top: 1px solid var(--violet); border-left: 1px solid var(--violet);
@@ -554,37 +742,48 @@ nav.top {
   font-family: var(--font-m); font-size: 9.5px;
   letter-spacing: 0.12em; color: var(--muted-2);
 }
+.orbital-stage .hint {
+  position: absolute; top: 14px; left: 14px;
+  font-family: var(--font-m); font-size: 9.5px;
+  letter-spacing: 0.1em; color: var(--muted-2);
+  text-transform: uppercase;
+}
+.orbital-stage .hint b { color: var(--violet-l); }
+.orbital-tooltip {
+  position: absolute; pointer-events: none;
+  background: rgba(4, 2, 12, 0.92); border: 1px solid var(--line-3);
+  border-radius: 6px; padding: 10px 14px;
+  font-family: var(--font-m); font-size: 10px;
+  color: var(--violet-ll); letter-spacing: 0.06em;
+  opacity: 0; transform: translate(-50%, -130%);
+  transition: opacity .15s;
+  white-space: nowrap; z-index: 10;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+.orbital-tooltip.on { opacity: 1; }
+.orbital-tooltip .h {
+  font-family: var(--font-d); font-weight: 700; font-size: 13px;
+  color: var(--text); margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+.orbital-tooltip .row { display: flex; justify-content: space-between; gap: 14px; line-height: 1.6; }
+.orbital-tooltip .row span:first-child { color: var(--muted); }
+.orbital-tooltip .row span:last-child { color: var(--teal-l); }
 
-/* ─────────── FEATURES (cards) ─────────── */
-.trailer {
-  padding: 80px 28px; border-bottom: 1px solid var(--line);
-  position: relative;
-}
-.trailer-inner { max-width: 1100px; margin: 0 auto; text-align: center; }
-.trailer-frame {
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 8px;
-  background: linear-gradient(180deg, rgba(127,119,221,0.08), rgba(127,119,221,0));
-  box-shadow: 0 24px 80px rgba(0,0,0,0.45);
-}
-.features {
-  padding: 96px 28px; border-bottom: 1px solid var(--line);
-}
-.features-inner { max-width: 1280px; margin: 0 auto; }
+.orbit-pt circle { transition: r .15s, filter .15s; }
+.orbit-pt:hover circle.body { filter: drop-shadow(0 0 8px currentColor); }
+
+/* ─────────── FEATURES ─────────── */
+.features { padding: 96px 28px; border-bottom: 1px solid var(--line); }
+.features-inner { max-width: 1400px; margin: 0 auto; }
 .features-head {
   display: grid; grid-template-columns: 1fr 1fr;
   gap: 40px; align-items: end; margin-bottom: 56px;
 }
-.features-head .kicker {
-  font-family: var(--font-m); font-size: 10.5px;
-  letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--violet); margin-bottom: 18px; display: block;
-}
 .features-head h2 {
   font-family: var(--font-d); font-weight: 700;
-  font-size: clamp(36px, 5.2vw, 64px);
-  letter-spacing: -0.035em; line-height: 0.98;
+  font-size: clamp(40px, 6vw, 76px);
+  letter-spacing: -0.04em; line-height: 0.94;
   color: var(--violet-ll);
 }
 .features-head h2 em {
@@ -593,28 +792,32 @@ nav.top {
 .features-head .lede {
   font-family: var(--font-m); font-size: 14px;
   color: var(--muted); line-height: 1.75;
-  max-width: 460px; padding-bottom: 8px;
+  max-width: 480px; padding-bottom: 8px;
 }
-
 .feat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
   background: var(--line);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 14px;
   overflow: hidden;
 }
 .feat {
   padding: 32px 28px 30px;
   background: var(--bg-1);
-  position: relative;
-  min-height: 260px;
-  transition: background .25s;
+  position: relative; min-height: 280px;
+  transition: background .25s, transform .25s;
 }
 .feat:hover {
-  background: linear-gradient(180deg, rgba(127, 119, 221, 0.06), var(--bg-1));
+  background: linear-gradient(180deg, rgba(127, 119, 221, 0.08), var(--bg-1));
 }
+.feat::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--violet), transparent);
+  opacity: 0; transition: opacity .3s;
+}
+.feat:hover::before { opacity: 1; }
 .feat-head {
   display: flex; align-items: center; justify-content: space-between;
   font-family: var(--font-m); font-size: 10px;
@@ -623,14 +826,12 @@ nav.top {
 }
 .feat-head .id { color: var(--violet); }
 .feat-ico {
-  width: 44px; height: 44px;
-  margin-bottom: 18px;
+  width: 48px; height: 48px; margin-bottom: 18px;
   display: grid;
   grid-template: repeat(4, 1fr) / repeat(4, 1fr);
   gap: 2px;
 }
 .feat-ico i { background: transparent; transition: background .2s; }
-/* pixel patterns */
 .feat-ico[data-pattern="pick"] i:nth-child(2),
 .feat-ico[data-pattern="pick"] i:nth-child(3),
 .feat-ico[data-pattern="pick"] i:nth-child(5),
@@ -639,7 +840,6 @@ nav.top {
 .feat-ico[data-pattern="pick"] i:nth-child(11),
 .feat-ico[data-pattern="pick"] i:nth-child(13),
 .feat-ico[data-pattern="pick"] i:nth-child(16) { background: var(--violet); }
-
 .feat-ico[data-pattern="world"] i:nth-child(2),
 .feat-ico[data-pattern="world"] i:nth-child(3),
 .feat-ico[data-pattern="world"] i:nth-child(5),
@@ -648,7 +848,6 @@ nav.top {
 .feat-ico[data-pattern="world"] i:nth-child(12),
 .feat-ico[data-pattern="world"] i:nth-child(14),
 .feat-ico[data-pattern="world"] i:nth-child(15) { background: var(--teal-l); }
-
 .feat-ico[data-pattern="market"] i:nth-child(1),
 .feat-ico[data-pattern="market"] i:nth-child(5),
 .feat-ico[data-pattern="market"] i:nth-child(6),
@@ -659,7 +858,6 @@ nav.top {
 .feat-ico[data-pattern="market"] i:nth-child(14),
 .feat-ico[data-pattern="market"] i:nth-child(15),
 .feat-ico[data-pattern="market"] i:nth-child(16) { background: var(--amber); }
-
 .feat-ico[data-pattern="server"] i:nth-child(2),
 .feat-ico[data-pattern="server"] i:nth-child(3),
 .feat-ico[data-pattern="server"] i:nth-child(6),
@@ -668,7 +866,6 @@ nav.top {
 .feat-ico[data-pattern="server"] i:nth-child(11),
 .feat-ico[data-pattern="server"] i:nth-child(14),
 .feat-ico[data-pattern="server"] i:nth-child(15) { background: var(--magenta); }
-
 .feat-ico[data-pattern="craft"] i:nth-child(1),
 .feat-ico[data-pattern="craft"] i:nth-child(4),
 .feat-ico[data-pattern="craft"] i:nth-child(6),
@@ -677,7 +874,6 @@ nav.top {
 .feat-ico[data-pattern="craft"] i:nth-child(11),
 .feat-ico[data-pattern="craft"] i:nth-child(13),
 .feat-ico[data-pattern="craft"] i:nth-child(16) { background: var(--violet-l); }
-
 .feat-ico[data-pattern="chat"] i:nth-child(1),
 .feat-ico[data-pattern="chat"] i:nth-child(2),
 .feat-ico[data-pattern="chat"] i:nth-child(3),
@@ -687,7 +883,6 @@ nav.top {
 .feat-ico[data-pattern="chat"] i:nth-child(9),
 .feat-ico[data-pattern="chat"] i:nth-child(12),
 .feat-ico[data-pattern="chat"] i:nth-child(14) { background: var(--teal); }
-
 .feat h3 {
   font-family: var(--font-d); font-weight: 600;
   font-size: 22px; color: var(--violet-ll);
@@ -709,24 +904,17 @@ nav.top {
   text-transform: uppercase;
 }
 
-/* ─────────── MARKET CHART ─────────── */
-.market {
-  padding: 96px 28px; border-bottom: 1px solid var(--line);
-}
+/* ─────────── MARKET ─────────── */
+.market { padding: 96px 28px; border-bottom: 1px solid var(--line); }
 .market-inner {
-  max-width: 1280px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr 1.4fr;
+  max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr;
   gap: 32px;
-}
-.market-copy .kicker {
-  font-family: var(--font-m); font-size: 10.5px;
-  letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--violet); margin-bottom: 18px; display: block;
 }
 .market-copy h3 {
   font-family: var(--font-d); font-weight: 700;
-  font-size: clamp(28px, 3.6vw, 42px);
-  letter-spacing: -0.02em; line-height: 1.05;
+  font-size: clamp(34px, 4.2vw, 50px);
+  letter-spacing: -0.03em; line-height: 1;
   color: var(--violet-ll); margin-bottom: 22px;
 }
 .market-copy p {
@@ -750,7 +938,6 @@ nav.top {
   background: rgba(8, 5, 26, 0.55);
   backdrop-filter: blur(6px);
   overflow: hidden;
-  position: relative;
 }
 .chart-head {
   display: flex; justify-content: space-between; align-items: center;
@@ -767,7 +954,7 @@ nav.top {
   font-family: var(--font-m); font-size: 10px; font-weight: 600;
   letter-spacing: 0.1em; padding: 5px 10px;
   border: 1px solid var(--line); border-radius: 4px;
-  color: var(--muted); cursor: pointer;
+  color: var(--muted);
 }
 .chart-head .tab.on {
   color: var(--violet-ll); border-color: var(--line-3);
@@ -785,32 +972,40 @@ nav.top {
 
 /* ─────────── CTA ─────────── */
 .cta {
-  padding: 140px 28px;
-  border-bottom: 1px solid var(--line);
-  position: relative; overflow: hidden;
-  text-align: center;
+  padding: 160px 28px; border-bottom: 1px solid var(--line);
+  position: relative; overflow: hidden; text-align: center;
 }
 .cta::before {
   content: ''; position: absolute; inset: 0;
   background:
-    radial-gradient(ellipse at 30% 50%, rgba(127, 119, 221, 0.16), transparent 60%),
-    radial-gradient(ellipse at 70% 50%, rgba(89, 229, 255, 0.10), transparent 60%);
+    radial-gradient(ellipse at 30% 50%, rgba(127, 119, 221, 0.18), transparent 60%),
+    radial-gradient(ellipse at 70% 50%, rgba(89, 229, 255, 0.12), transparent 60%);
   pointer-events: none;
 }
-.cta-inner {
-  max-width: 880px; margin: 0 auto;
-  position: relative; z-index: 1;
+.cta::after {
+  /* receding grid floor */
+  content: ''; position: absolute; left: 50%; bottom: 0;
+  width: 200%; height: 280px; transform: translateX(-50%) perspective(600px) rotateX(60deg);
+  background-image:
+    linear-gradient(rgba(127, 119, 221, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(127, 119, 221, 0.18) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 30%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 30%, transparent 100%);
+  pointer-events: none; opacity: 0.5;
+  transform-origin: 50% 100%;
+  animation: floorMove 3s linear infinite;
 }
-.cta .kicker {
-  font-family: var(--font-m); font-size: 11px;
-  letter-spacing: 0.22em; text-transform: uppercase;
-  color: var(--amber); margin-bottom: 22px; display: inline-block;
+@keyframes floorMove {
+  from { background-position: 0 0; }
+  to   { background-position: 0 60px; }
 }
+.cta-inner { max-width: 880px; margin: 0 auto; position: relative; z-index: 2; }
 .cta h2 {
   font-family: var(--font-d); font-weight: 700;
-  font-size: clamp(48px, 7vw, 88px);
-  letter-spacing: -0.04em; line-height: 0.96;
-  margin-bottom: 22px;
+  font-size: clamp(56px, 9vw, 120px);
+  letter-spacing: -0.05em; line-height: 0.9;
+  margin-bottom: 28px;
   background: linear-gradient(180deg, var(--violet-ll) 0%, var(--violet) 100%);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -823,42 +1018,95 @@ nav.top {
 }
 .btn-steam {
   display: inline-flex; align-items: center; gap: 14px;
-  padding: 20px 32px; border-radius: 10px;
+  padding: 22px 36px; border-radius: 10px;
   background: linear-gradient(180deg, #5b52c8 0%, #463db0 100%);
   border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 12px 40px rgba(70, 61, 176, 0.5),
-              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 12px 40px rgba(70, 61, 176, 0.55),
+              inset 0 1px 0 rgba(255, 255, 255, 0.22);
   color: #fff; text-decoration: none;
-  font-family: var(--font-d); font-weight: 700; font-size: 19px;
+  font-family: var(--font-d); font-weight: 700; font-size: 21px;
   letter-spacing: -0.01em;
   transition: transform .15s ease, box-shadow .15s ease;
+  position: relative; overflow: hidden;
+}
+.btn-steam::before {
+  content: ''; position: absolute; top: 0; left: -100%; bottom: 0;
+  width: 60%; transform: skewX(-20deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  transition: left .8s;
 }
 .btn-steam:hover {
   transform: translateY(-2px);
-  box-shadow: 0 18px 50px rgba(70, 61, 176, 0.65),
-              inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  box-shadow: 0 18px 50px rgba(70, 61, 176, 0.7),
+              inset 0 1px 0 rgba(255, 255, 255, 0.28);
 }
+.btn-steam:hover::before { left: 110%; }
 .btn-steam-ico {
-  width: 32px; height: 32px;
+  width: 34px; height: 34px;
   display: inline-flex; align-items: center; justify-content: center;
   background: #0a0a1a; border-radius: 50%;
-  font-size: 12px; color: var(--teal-l);
-  box-shadow: inset 0 0 0 1px rgba(148, 240, 255, 0.4);
+  font-size: 13px; color: var(--teal-l);
+  box-shadow: inset 0 0 0 1px rgba(148, 240, 255, 0.5);
 }
 .cta-foot {
   margin-top: 38px;
   font-family: var(--font-m); font-size: 11px;
-  color: var(--muted-2); letter-spacing: 0.06em;
+  color: var(--muted-2); letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ─────────── ALWAYS-ON MINI HUD ─────────── */
+.mini-hud {
+  position: fixed; left: 14px; bottom: 14px; z-index: 30;
+  font-family: var(--font-m); font-size: 9.5px;
+  background: rgba(4, 2, 12, 0.86);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  display: grid; gap: 4px;
+  color: var(--muted); letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 26px rgba(0,0,0,0.4);
+  pointer-events: none;
+  min-width: 220px;
+}
+.mini-hud .head {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--teal-l); font-weight: 700; letter-spacing: 0.16em;
+  margin-bottom: 4px;
+}
+.mini-hud .head::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--teal-l); box-shadow: 0 0 8px var(--teal-l);
+  animation: blink 1.4s infinite;
+}
+.mini-hud .row { display: flex; justify-content: space-between; }
+.mini-hud .row b { color: var(--violet-l); font-weight: 600; }
+.mini-hud .row .amber { color: var(--amber); }
+
+/* pixel miner walking */
+.miner {
+  position: fixed; bottom: 0; left: 0; z-index: 25;
+  width: 32px; height: 32px;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation: minerWalk 60s linear infinite;
+}
+@keyframes minerWalk {
+  0%   { transform: translateX(-50px); }
+  100% { transform: translateX(calc(100vw + 50px)); }
 }
 
 /* ─────────── FOOTER ─────────── */
 footer {
-  padding: 56px 28px 40px;
+  padding: 64px 28px 44px;
   display: grid;
   grid-template-columns: 1.4fr repeat(3, 1fr);
   gap: 40px;
   border-top: 1px solid var(--line);
-  background: rgba(4, 2, 12, 0.6);
+  background: rgba(4, 2, 12, 0.7);
+  position: relative;
 }
 footer h6 {
   font-family: var(--font-m); font-size: 10px;
@@ -877,7 +1125,7 @@ footer a:hover { color: var(--text); }
   color: var(--muted); line-height: 1.7;
   max-width: 280px; margin-top: 12px;
 }
-.foot-brand .logo img { height: 110px; }
+.foot-brand .logo img { height: 44px; }
 .foot-bottom {
   grid-column: 1 / -1;
   margin-top: 30px; padding-top: 24px;
@@ -889,15 +1137,23 @@ footer a:hover { color: var(--text); }
 .foot-bottom .glyph {
   display: inline-block; width: 8px; height: 8px;
   background: var(--amber); margin-right: 8px;
+  animation: blink 1.6s infinite;
 }
 
 /* ─────────── RESPONSIVE ─────────── */
+@media (max-width: 1180px) {
+  .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+  .voxel-chunk, .galaxy-stage { max-width: 600px; margin: 0 auto; }
+}
 @media (max-width: 1024px) {
   .hud-grid { grid-template-columns: 1fr; }
   .orbital-inner { grid-template-columns: 1fr; gap: 32px; }
   .market-inner { grid-template-columns: 1fr; gap: 28px; }
   .features-head { grid-template-columns: 1fr; gap: 18px; }
   .feat-grid { grid-template-columns: repeat(2, 1fr); }
+  .hud-row { grid-template-columns: repeat(2, 1fr); }
+  .hud-head { flex-direction: column; align-items: flex-start; }
+  .hud-head .meta { text-align: left; }
 }
 @media (max-width: 720px) {
   .hud-row { grid-template-columns: 1fr; }
@@ -907,14 +1163,48 @@ footer a:hover { color: var(--text); }
   .nav-links { display: none; }
   .pill { display: none; }
   footer { grid-template-columns: 1fr; }
+  .mini-hud { display: none; }
+  html, body, a, button { cursor: auto; }
+  .cursor { display: none; }
+  .marquee { height: 44px; }
+  .marquee-track { font-size: 22px; }
 }
 </style>
 </head>
 <body>
 
-<!-- COSMIC BACKDROP -->
+<!-- BACKDROP -->
 <div class="space-bg" aria-hidden="true"></div>
 <canvas id="stars" aria-hidden="true"></canvas>
+<div class="noise-overlay" aria-hidden="true"></div>
+<div class="crt-overlay" aria-hidden="true"></div>
+
+<!-- CUSTOM CURSOR -->
+<div class="cursor" id="cursor" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="none">
+    <path d="M12 2 L12 9 M12 15 L12 22 M2 12 L9 12 M15 12 L22 12" stroke="#94f0ff" stroke-width="1.4" stroke-linecap="square"/>
+    <circle cx="12" cy="12" r="1.5" fill="#f0b84a"/>
+    <circle cx="12" cy="12" r="6" stroke="#94f0ff" stroke-opacity="0.35" stroke-width="0.8" fill="none"/>
+  </svg>
+  <div class="cursor-coords" id="coords" style="display:none"></div>
+</div>
+
+<!-- BOOT SEQUENCE -->
+<div class="boot" id="boot">
+  <div class="boot-frame">
+    <div class="head">▸ TRANSMISSION INTERCEPTED</div>
+    <div class="row"><span class="ok">[ OK ]</span><span>Connecting to <span class="typ">core-0.sector.0xB1</span></span></div>
+    <div class="row"><span class="ok">[ OK ]</span><span>Negotiating handshake <span class="typ">SHA-256 / chain</span></span></div>
+    <div class="row"><span class="ok">[ OK ]</span><span>Stream open <span class="typ">488ms ↘ 32ms</span></span></div>
+    <div class="row"><span class="err">[ -- ]</span><span>Decoding payload <span class="typ" id="bootDecode">________</span><span class="caret"></span></span></div>
+    <div class="skip">▸ press anywhere to skip · auto-continue in <b id="bootCountdown">2</b>s</div>
+  </div>
+</div>
+
+<!-- TOP BROADCAST -->
+<div class="broadcast" aria-hidden="true">
+  <div class="broadcast-track" id="broadcastTrack"></div>
+</div>
 
 <!-- NAV -->
 <nav class="top">
@@ -922,11 +1212,10 @@ footer a:hover { color: var(--text); }
     <img src="assets/bitroca-logo.png" alt="Bitroca" />
   </a>
   <div class="nav-links">
-    <a href="#hud">Telemetry</a>
-    <a href="#world">The World</a>
-    <a href="#features">Systems</a>
-    <a href="privacy.html">Privacy</a>
-    <a href="eula.html">EULA</a>
+    <a href="#hud">▸ telemetry</a>
+    <a href="#world">▸ the verse</a>
+    <a href="#features">▸ systems</a>
+    <a href="#market">▸ market</a>
   </div>
   <div class="nav-right">
     <span class="pill">Open beta · live</span>
@@ -934,87 +1223,109 @@ footer a:hover { color: var(--text); }
   </div>
 </nav>
 
-<!-- TICKER -->
-<div class="ticker" aria-hidden="true">
-  <div class="ticker-track" id="tickerTrack"></div>
-</div>
-
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-planet" aria-hidden="true">
-    <div class="ring"><span class="ring-dot"></span></div>
-    <div class="ring r2"><span class="ring-dot d2"></span></div>
-    <div class="ring r3"></div>
-    <div class="core"></div>
-  </div>
+  <div class="hero-grid">
+    <div class="hero-left">
+      <span class="hero-tag"><span class="dot"></span> Transmission · sector 0xB1 · live</span>
 
-  <div class="hero-inner">
-    <span class="hero-badge"><span class="dot"></span> Open beta · play now</span>
-    <h1>
-      <span class="a">Break</span> <span class="amp">&amp;</span> <span class="b">Verify</span>
-      <span class="keeps">keeps the world <span class="alive">alive</span>.</span>
-    </h1>
-    <p class="hero-sub">
-      Bitroca is a persistent voxel world with a live, on-chain economy.
-      Every block you mine, every trade you make, every tower you build —
-      logged, priced, permanent. One server. Open beta. No resets.
-    </p>
-    <div class="hero-ctas">
-      <a class="btn btn-primary" href="#launch">View on Steam ↗</a>
-      <a class="btn btn-ghost" href="#hud">See the telemetry</a>
+      <h1 class="wordmark"><span class="glitch" data-text="BITROCA">BITROCA</span></h1>
+
+      <p class="hero-headline">
+        <span class="break">Break</span> &amp; <span class="verify">Verify</span> keeps
+        the world <span class="alive">alive</span>.
+      </p>
+      <p class="hero-sub">
+        A persistent voxel universe with a real, on-chain economy. Every block you mine,
+        every trade you make, every tower you raise — logged, priced, permanent.
+        One server. Open beta. No resets.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#launch">View on Steam ↗</a>
+        <a class="btn btn-ghost" href="#hud">See live telemetry</a>
+      </div>
+      <div class="hero-meta">
+        <div>
+          <div class="l">Server status</div>
+          <div class="v">BETA <span class="delta">· live</span></div>
+        </div>
+        <div>
+          <div class="l">World size</div>
+          <div class="v">∞ <span class="delta">procedural</span></div>
+        </div>
+        <div>
+          <div class="l">FORGE price</div>
+          <div class="v">$0.00 <span class="delta">demo</span></div>
+        </div>
+      </div>
     </div>
-    <div class="hero-meta">
-      <div>
-        <div class="l">Server status</div>
-        <div class="v">BETA <span class="delta">· live</span></div>
-      </div>
-      <div>
-        <div class="l">World size</div>
-        <div class="v">∞ <span class="delta">procedural</span></div>
-      </div>
-      <div>
-        <div class="l">Forge reward</div>
-        <div class="v">50 <span class="delta">FORGE</span></div>
-      </div>
+
+    <div class="galaxy-stage" id="galaxyStage">
+      <div class="chunk-badge">▸ SECTOR LIVE</div>
+      <div class="chunk-coords">SECTOR 0xB1</div>
+      <canvas id="galaxy" width="1040" height="1040"></canvas>
     </div>
   </div>
 </section>
 
-<!-- HUD / TELEMETRY -->
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span class="a">BREAK &amp; VERIFY</span><span class="star">✦</span>
+    <span class="b">SECTOR 0xB1</span><span class="star">✦</span>
+    <span class="c">OPEN BETA · LIVE</span><span class="star">✦</span>
+    <span class="a">A PERSISTENT VERSE</span><span class="star">✦</span>
+    <span class="b">ONE WORLD, ONE CHAIN</span><span class="star">✦</span>
+    <span class="c">CORE-0 ONLINE</span><span class="star">✦</span>
+    <span class="a">BREAK &amp; VERIFY</span><span class="star">✦</span>
+    <span class="b">SECTOR 0xB1</span><span class="star">✦</span>
+    <span class="c">OPEN BETA · LIVE</span><span class="star">✦</span>
+    <span class="a">A PERSISTENT VERSE</span><span class="star">✦</span>
+    <span class="b">ONE WORLD, ONE CHAIN</span><span class="star">✦</span>
+    <span class="c">CORE-0 ONLINE</span><span class="star">✦</span>
+  </div>
+</div>
+
+<!-- TELEMETRY HUD -->
 <section class="hud-section" id="hud">
   <div class="hud-inner">
     <div class="hud-head">
       <div>
-        <div class="kicker">▸ Mission control · /var/log/bitroca</div>
-        <h2>Live telemetry from the void.</h2>
+        <span class="kicker">▸ /var/log/bitroca · 0xB1</span>
+        <h2>Live telemetry from <em>the void.</em></h2>
       </div>
-      <div class="meta">SIGNAL <b>STRONG</b> · LATENCY <b>32ms</b> · DEMO MODE</div>
+      <div class="meta">SIGNAL <b>STRONG</b><br/>LATENCY <b>32ms</b><br/>DEMO MODE</div>
     </div>
 
     <div class="hud-grid">
       <div class="hud-card">
         <div class="lbl"><span class="dot"></span> Current chain block</div>
-        <div class="big"><span id="s1">#0</span></div>
+        <div class="big"><span id="s1">#0</span><span class="unit">awaiting genesis</span></div>
+        <div class="sub">First verified block drops here when open beta begins minting.</div>
       </div>
-
       <div class="hud-card">
         <div class="lbl"><span class="dot"></span> Last forge block</div>
-        <div class="big"><span id="s4">No forge yet</span></div>
+        <div class="big"><span id="s4">No forge yet</span><span class="unit">awaiting first miner</span></div>
+        <div class="sub">When a miner cracks a forge block, the FORGE reward drops here in real time.</div>
       </div>
     </div>
 
     <div class="hud-row">
       <div class="hud-mini">
         <div class="l">Active worlds</div>
-        <div class="v"><span class="x" id="s2">0</span></div>
+        <div class="v"><span id="s2" class="x">0</span></div>
       </div>
       <div class="hud-mini">
         <div class="l">Locked worlds</div>
-        <div class="v"><span class="x" id="s6">0</span></div>
+        <div class="v"><span id="s6" class="x">0</span></div>
       </div>
       <div class="hud-mini">
         <div class="l">Blocks mined · 24h</div>
-        <div class="v"><span class="x" id="s7">0</span></div>
+        <div class="v"><span id="s7" class="x">0</span></div>
+      </div>
+      <div class="hud-mini">
+        <div class="l">Players online</div>
+        <div class="v"><span id="s3" class="x">0</span></div>
       </div>
     </div>
 
@@ -1023,41 +1334,32 @@ footer a:hover { color: var(--text); }
         <div class="lbl"><span class="dot"></span> Forge log · last events</div>
         <div class="forge-log">
           <div class="forge-row">
-            <span class="num" id="s8">#0</span>
-            <span class="who" id="s9">Awaiting first forge block — be the first.</span>
-            <span class="when" id="s10">—</span>
+            <span id="s8" class="num">#—</span>
+            <span id="s9" class="who">No forge blocks mined yet.</span>
+            <span id="s10" class="when">—</span>
           </div>
           <div class="forge-row">
-            <span class="num">#?</span>
-            <span class="who">Could be <b>you</b></span>
+            <span class="num">#—</span>
+            <span class="who">Your name <b>here</b> · in your world <b>your-claim</b></span>
             <span class="when">—</span>
           </div>
           <div class="forge-row">
-            <span class="num">#?</span>
-            <span class="who">Could be <b>you</b></span>
+            <span class="num">#—</span>
+            <span class="who">Awaiting first miner.</span>
             <span class="when">—</span>
           </div>
         </div>
       </div>
       <div class="hud-card">
-        <div class="lbl"><span class="dot"></span> Network signal</div>
-        <svg viewBox="0 0 400 180" preserveAspectRatio="none" style="width:100%; height: 180px; display:block;">
-          <defs>
-            <linearGradient id="sigG" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stop-color="#7f77dd" stop-opacity="0.45"/>
-              <stop offset="100%" stop-color="#7f77dd" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
+        <div class="lbl"><span class="dot"></span> Network signal · 24h</div>
+        <svg viewBox="0 0 400 180" preserveAspectRatio="none" style="width:100%; height: 180px; display:block; margin-top: 6px;">
           <g stroke="rgba(127,119,221,0.12)" stroke-dasharray="2 4">
             <line x1="0" y1="40" x2="400" y2="40"/>
             <line x1="0" y1="90" x2="400" y2="90"/>
             <line x1="0" y1="140" x2="400" y2="140"/>
           </g>
-          <path id="sigArea" fill="url(#sigG)"
-                d="M0,140 L20,135 40,138 60,128 80,132 100,118 120,124 140,108 160,116 180,98 200,104 220,86 240,94 260,78 280,84 300,72 320,80 340,68 360,76 380,62 400,70 L400,180 L0,180 Z"/>
-          <path id="sigLine" fill="none" stroke="#a8a0ff" stroke-width="1.5"
-                d="M0,140 L20,135 40,138 60,128 80,132 100,118 120,124 140,108 160,116 180,98 200,104 220,86 240,94 260,78 280,84 300,72 320,80 340,68 360,76 380,62 400,70"/>
-          <circle cx="400" cy="70" r="4" fill="#94f0ff"/>
+          <line x1="0" y1="165" x2="400" y2="165" stroke="#a8a0ff" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.45"/>
+          <text x="200" y="95" text-anchor="middle" font-family="JetBrains Mono" font-size="11" fill="rgba(214,208,255,0.5)" letter-spacing="3">NO DATA · STANDBY</text>
         </svg>
         <div style="font-family:var(--font-m); font-size:10.5px; color:var(--muted); letter-spacing:0.08em; margin-top:8px; display:flex; justify-content:space-between;">
           <span>T-24h</span><span>T-12h</span><span>NOW</span>
@@ -1067,16 +1369,36 @@ footer a:hover { color: var(--text); }
   </div>
 </section>
 
-<!-- ORBITAL WORLD MAP -->
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span class="b">YOUR PLOT · 200×100</span><span class="star">✦</span>
+    <span class="c">CLAIM ANYWHERE</span><span class="star">✦</span>
+    <span class="a">PERSISTENT</span><span class="star">✦</span>
+    <span class="b">PUBLIC · PRIVATE · LOCKED</span><span class="star">✦</span>
+    <span class="c">PVP OPT-IN</span><span class="star">✦</span>
+    <span class="a">YOUR SKY</span><span class="star">✦</span>
+    <span class="b">YOUR PLOT · 200×100</span><span class="star">✦</span>
+    <span class="c">CLAIM ANYWHERE</span><span class="star">✦</span>
+    <span class="a">PERSISTENT</span><span class="star">✦</span>
+    <span class="b">PUBLIC · PRIVATE · LOCKED</span><span class="star">✦</span>
+    <span class="c">PVP OPT-IN</span><span class="star">✦</span>
+    <span class="a">YOUR SKY</span><span class="star">✦</span>
+  </div>
+</div>
+
+<!-- ORBITAL MAP -->
 <section class="orbital" id="world">
   <div class="orbital-inner">
     <div class="orbital-copy">
-      <span class="kicker" style="font-family:var(--font-m); font-size:10.5px; letter-spacing:0.2em; text-transform:uppercase; color:var(--violet); margin-bottom:18px; display:block;">▸ Sector 0xB1 · the verse</span>
-      <h3>One persistent universe. Yours to claim.</h3>
+      <span class="kicker">▸ The verse · sector 0xB1</span>
+      <h3>One <em>universe.</em><br/>Infinite plots.<br/>Your sky.</h3>
       <p>
         Bitroca runs as a single procedural universe orbiting a shared chain.
         Stake a 200×100 plot anywhere in open space — build, lock, share, sell.
-        Worlds persist between sessions; the verse keeps spinning when you log off.
+      </p>
+      <p>
+        Worlds persist between sessions. The verse keeps spinning when you log off.
       </p>
       <ul>
         <li><span>Plot size</span><b>200 × 100</b></li>
@@ -1087,6 +1409,7 @@ footer a:hover { color: var(--text); }
     </div>
 
     <div class="orbital-stage">
+      <div class="hint">▸ <b>HOVER</b> a body for telemetry</div>
       <div class="badge">Live · Demo</div>
       <div class="coords">SECTOR 0xB1 · 0,0</div>
       <svg class="orbital-svg" viewBox="0 0 600 600" id="orbitalMap">
@@ -1101,17 +1424,26 @@ footer a:hover { color: var(--text); }
             <stop offset="40%" stop-color="#f0b84a"/>
             <stop offset="100%" stop-color="#f0b84a" stop-opacity="0"/>
           </radialGradient>
+          <radialGradient id="bodyTeal" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#fff"/>
+            <stop offset="50%" stop-color="#94f0ff"/>
+            <stop offset="100%" stop-color="#1a3a44"/>
+          </radialGradient>
+          <radialGradient id="bodyMagenta" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#ffd2ee"/>
+            <stop offset="50%" stop-color="#ff5ec8"/>
+            <stop offset="100%" stop-color="#3a0a2a"/>
+          </radialGradient>
         </defs>
 
-        <!-- distant nebula glow -->
-        <circle cx="300" cy="300" r="280" fill="url(#sunGrad)" opacity="0.05"/>
+        <circle cx="300" cy="300" r="280" fill="url(#sunGrad)" opacity="0.06"/>
 
         <!-- orbits -->
-        <g fill="none" stroke="rgba(127,119,221,0.18)">
+        <g fill="none" stroke="rgba(127,119,221,0.2)">
           <circle cx="300" cy="300" r="80"/>
           <circle cx="300" cy="300" r="140" stroke-dasharray="3 6"/>
           <circle cx="300" cy="300" r="210"/>
-          <circle cx="300" cy="300" r="270" stroke-dasharray="3 6" stroke="rgba(127,119,221,0.1)"/>
+          <circle cx="300" cy="300" r="270" stroke-dasharray="3 6" stroke="rgba(127,119,221,0.12)"/>
         </g>
 
         <!-- crosshair -->
@@ -1120,94 +1452,70 @@ footer a:hover { color: var(--text); }
           <line x1="300" y1="0" x2="300" y2="600"/>
         </g>
 
-        <!-- central star -->
-        <circle cx="300" cy="300" r="22" fill="url(#sunGrad)"/>
-        <circle cx="300" cy="300" r="8" fill="#fff"/>
-        <text x="300" y="346" text-anchor="middle"
-              font-family="JetBrains Mono" font-size="9"
-              fill="#94f0ff" letter-spacing="2">CORE-0</text>
-
-        <!-- orbiting planets / claims -->
-        <g id="orbitGroup">
-          <!-- inner planet -->
-          <g class="orbit-pt" transform="rotate(0 300 300)">
-            <g transform="translate(380 300)">
-              <circle r="9" fill="url(#planetGrad)"/>
-              <circle r="11" fill="none" stroke="#7f77dd" stroke-opacity="0.4"/>
-              <text x="14" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#d6d0ff" letter-spacing="1">DEMO-A</text>
-            </g>
-          </g>
-          <g class="orbit-pt" transform="rotate(120 300 300)">
-            <g transform="translate(440 300)">
-              <circle r="7" fill="#94f0ff" opacity="0.85"/>
-              <text x="12" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#94f0ff" letter-spacing="1">DEMO-B</text>
-            </g>
-          </g>
-          <g class="orbit-pt" transform="rotate(245 300 300)">
-            <g transform="translate(440 300)">
-              <circle r="6" fill="#ff5ec8" opacity="0.85"/>
-              <text x="12" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#ff5ec8" letter-spacing="1">DEMO-C</text>
-            </g>
-          </g>
-          <g class="orbit-pt" transform="rotate(60 300 300)">
-            <g transform="translate(510 300)">
-              <circle r="5" fill="#f0b84a"/>
-              <text x="10" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#f0b84a" letter-spacing="1">SHARD-1</text>
-            </g>
-          </g>
-          <g class="orbit-pt" transform="rotate(200 300 300)">
-            <g transform="translate(510 300)">
-              <circle r="4" fill="#a8a0ff"/>
-              <text x="10" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#a8a0ff" letter-spacing="1">SHARD-2</text>
-            </g>
-          </g>
-          <g class="orbit-pt" transform="rotate(330 300 300)">
-            <g transform="translate(510 300)">
-              <circle r="4" fill="#a8a0ff" opacity="0.7"/>
-              <text x="10" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#a8a0ff" letter-spacing="1">SHARD-3</text>
-            </g>
-          </g>
-        </g>
-
-        <!-- distant satellites -->
-        <g id="comet" transform="translate(560 90)">
-          <circle r="2.5" fill="#fff"/>
-          <line x1="0" y1="0" x2="-30" y2="14" stroke="#fff" stroke-opacity="0.4" stroke-width="1.5"/>
-        </g>
-
-        <!-- coordinate ticks -->
+        <!-- ticks -->
         <g font-family="JetBrains Mono" font-size="8" fill="rgba(127,119,221,0.4)" letter-spacing="1">
           <text x="14" y="306">−300</text>
           <text x="556" y="306">+300</text>
           <text x="288" y="14">+300</text>
           <text x="288" y="592">−300</text>
         </g>
+
+        <!-- central star -->
+        <circle cx="300" cy="300" r="26" fill="url(#sunGrad)"/>
+        <circle cx="300" cy="300" r="9" fill="#fff"/>
+        <text x="300" y="350" text-anchor="middle"
+              font-family="JetBrains Mono" font-size="9"
+              fill="#f0b84a" letter-spacing="2">CORE-0</text>
+
+        <!-- planets / claims (animated) -->
+        <g id="orbitGroup"></g>
+
+        <!-- comet -->
+        <g id="comet" transform="translate(560 90)">
+          <circle r="2.5" fill="#fff"/>
+          <line x1="0" y1="0" x2="-30" y2="14" stroke="#fff" stroke-opacity="0.4" stroke-width="1.5"/>
+        </g>
       </svg>
+      <div class="orbital-tooltip" id="orbitTip">
+        <div class="h" id="otName">Open plot</div>
+        <div class="row"><span>Type</span><span id="otType">Personal world</span></div>
+        <div class="row"><span>Owner</span><span id="otOwner">unclaimed</span></div>
+        <div class="row"><span>Plot</span><span id="otPlot">200×100</span></div>
+        <div class="row"><span>Tier</span><span id="otTier">—</span></div>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- TRAILER -->
-<section class="trailer" id="trailer">
-  <div class="trailer-inner">
-    <span class="kicker" style="font-family:var(--font-m); font-size:10.5px; letter-spacing:0.2em; text-transform:uppercase; color:var(--violet); margin-bottom:18px; display:block;">▸ Trailer · v0.1</span>
-    <h3 style="font-family:var(--font-d); font-size:36px; line-height:1.1; color:var(--violet-ll); margin-bottom:24px;">See the verse in motion.</h3>
-    <div class="trailer-frame">
-      <video controls preload="metadata" playsinline poster="" style="width:100%; height:auto; display:block; border-radius:14px; background:#04020c;">
-        <source src="assets/bitroca-trailer.mp4" type="video/mp4" />
-        Your browser does not support embedded video. <a href="assets/bitroca-trailer.mp4">Download the trailer</a>.
-      </video>
-    </div>
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span class="a">MINE</span><span class="star">✦</span>
+    <span class="b">FORGE</span><span class="star">✦</span>
+    <span class="c">CRAFT</span><span class="star">✦</span>
+    <span class="a">TRADE</span><span class="star">✦</span>
+    <span class="b">CLAIM</span><span class="star">✦</span>
+    <span class="c">VERIFY</span><span class="star">✦</span>
+    <span class="a">MINE</span><span class="star">✦</span>
+    <span class="b">FORGE</span><span class="star">✦</span>
+    <span class="c">CRAFT</span><span class="star">✦</span>
+    <span class="a">TRADE</span><span class="star">✦</span>
+    <span class="b">CLAIM</span><span class="star">✦</span>
+    <span class="c">VERIFY</span><span class="star">✦</span>
+    <span class="a">MINE</span><span class="star">✦</span>
+    <span class="b">FORGE</span><span class="star">✦</span>
+    <span class="c">CRAFT</span><span class="star">✦</span>
+    <span class="a">TRADE</span><span class="star">✦</span>
   </div>
-</section>
+</div>
 
 <!-- FEATURES -->
 <section class="features" id="features">
   <div class="features-inner">
     <div class="features-head">
       <div>
-        <span class="kicker">▸ Systems · v0.1 demo build</span>
-        <h2>Six systems, <em>one universe.</em></h2>
+        <span class="kicker">▸ Systems · v0.1 demo</span>
+        <h2>Six systems,<br/><em>one universe.</em></h2>
       </div>
       <p class="lede">Every Bitroca system speaks the same on-chain language. Mine, build, trade, talk — every action is a verifiable transaction in a world that never stops.</p>
     </div>
@@ -1215,12 +1523,7 @@ footer a:hover { color: var(--text); }
     <div class="feat-grid">
       <div class="feat">
         <div class="feat-head"><span class="id">01 · MINE</span><span>core</span></div>
-        <div class="feat-ico" data-pattern="pick">
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-        </div>
+        <div class="feat-ico" data-pattern="pick"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <h3>Mine &amp; forge<span class="note">proof-of-work blocks</span></h3>
         <p>Crack the hash inside a forge block, claim the reward. FORGE tokens credited on-chain, in-game, instantly. The deeper you dig, the rarer the drop.</p>
         <div class="feat-tag">▸ DEMO YIELD · 0 FORGE/min</div>
@@ -1228,12 +1531,7 @@ footer a:hover { color: var(--text); }
 
       <div class="feat">
         <div class="feat-head"><span class="id">02 · OWN</span><span>core</span></div>
-        <div class="feat-ico" data-pattern="world">
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-        </div>
+        <div class="feat-ico" data-pattern="world"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <h3>Personal worlds<span class="note">200 × 100 plots</span></h3>
         <p>Stake a claim, set the rules. Private build, public trade zone, PvP arena — your call. Friends list or public leaderboard. Your sector, your sky.</p>
         <div class="feat-tag">▸ CLAIM SIZE · 200×100</div>
@@ -1241,12 +1539,7 @@ footer a:hover { color: var(--text); }
 
       <div class="feat">
         <div class="feat-head"><span class="id">03 · TRADE</span><span>economy</span></div>
-        <div class="feat-ico" data-pattern="market">
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-        </div>
+        <div class="feat-ico" data-pattern="market"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <h3>The CIPHER market<span class="note">live order book</span></h3>
         <p>Every resource has a price; every price moves. Trade FORGE, IRON, DIAM, GOLD and rare drops on the open exchange. Liquidity is a real skill.</p>
         <div class="feat-tag">▸ DEMO VOL · $0 / 24h</div>
@@ -1254,12 +1547,7 @@ footer a:hover { color: var(--text); }
 
       <div class="feat">
         <div class="feat-head"><span class="id">04 · RUN</span><span>live</span></div>
-        <div class="feat-ico" data-pattern="server">
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-        </div>
+        <div class="feat-ico" data-pattern="server"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <h3>Always online<span class="note">(during beta, wipes &amp; downtime can be expected)</span></h3>
         <p>One persistent server. Your walls stay up when you log off. The world ages whether you're in it or not.</p>
         <div class="feat-tag">▸ UPTIME · BETA</div>
@@ -1267,12 +1555,7 @@ footer a:hover { color: var(--text); }
 
       <div class="feat">
         <div class="feat-head"><span class="id">05 · BUILD</span><span>craft</span></div>
-        <div class="feat-ico" data-pattern="craft">
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-        </div>
+        <div class="feat-ico" data-pattern="craft"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <h3>Craft anything<span class="note">recipe-free building</span></h3>
         <p>No recipe books. No tech tree. Stack blocks, wire circuits, design contraptions. If you can think it in voxels, you can ship it on the chain.</p>
         <div class="feat-tag">▸ BLOCK TYPES · 64+</div>
@@ -1280,32 +1563,45 @@ footer a:hover { color: var(--text); }
 
       <div class="feat">
         <div class="feat-head"><span class="id">06 · TALK</span><span>social</span></div>
-        <div class="feat-ico" data-pattern="chat">
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-          <i></i><i></i><i></i><i></i>
-        </div>
+        <div class="feat-ico" data-pattern="chat"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
         <h3>Live in-game chat<span class="note">world &amp; trade broadcast</span></h3>
         <p>World chat and trade broadcast. When someone strikes diamond at y=−48, everyone feels it on the ticker.</p>
-        <div class="feat-tag">▸ DEMO PEAK · <span id="s3">0</span> online</div>
+        <div class="feat-tag">▸ DEMO PEAK · 0 online</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- CTA / LAUNCH -->
+<!-- MARKET -->
+<section class="market" id="market">
+  <div class="market-inner">
+    <div class="market-copy">
+      <span class="kicker">▸ Market · CIPHER exchange</span>
+      <h3>Real prices.<br/>Real liquidity.<br/>Real consequences.</h3>
+      <p>FORGE/USD trades 24/7 on a transparent on-chain order book. The chart starts filling the moment the first forge block is mined in open beta.</p>
+      <div class="market-stats">
+        <div class="market-stat"><span class="l">FORGE / USD</span><span class="v">—</span></div>
+        <div class="market-stat"><span class="l">24h volume</span><span class="v">—</span></div>
+        <div class="market-stat"><span class="l">Open interest</span><span class="v">—</span></div>
+        <div class="market-stat"><span class="l">Active pairs</span><span class="v">—</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CTA -->
 <section class="cta" id="launch">
   <div class="cta-inner">
-    <span class="kicker">▸ Open beta · play now</span>
-    <h2>The verse is <em>open.</em><br/>The launch pad is yours.</h2>
-    <p>Wishlist Bitroca on Steam, follow patch updates, and drop into open beta. No email, no waitlist. Just press play.</p>
+    <span class="kicker">▸ Open beta · launch pad</span>
+    <h2>The verse is <em>open.</em><br/>Be a miner.</h2>
+    <p>Wishlist Bitroca on Steam, follow patch updates, drop into open beta. No email. No waitlist. Just press play.</p>
     <a class="btn-steam" href="https://store.steampowered.com/search/?term=bitroca" target="_blank" rel="noopener">
       <span class="btn-steam-ico" aria-hidden="true">▶</span>
       <span>View on Steam</span>
       <span style="font-family:var(--font-m); font-size:14px; opacity:0.85;">↗</span>
     </a>
-    <div class="cta-foot">▸ DEMO BUILD · v0.1 · Powered by hand &amp; one VPS at the edge of the void</div>
+    <div class="cta-foot">▸ Demo build · v0.1 · transmitting from the edge of the void</div>
   </div>
 </section>
 
@@ -1321,8 +1617,9 @@ footer a:hover { color: var(--text); }
     <h6>Mission</h6>
     <ul>
       <li><a href="#hud">Telemetry</a></li>
-      <li><a href="#world">The World</a></li>
+      <li><a href="#world">The Verse</a></li>
       <li><a href="#features">Systems</a></li>
+      <li><a href="#market">Market</a></li>
     </ul>
   </div>
   <div>
@@ -1349,41 +1646,113 @@ footer a:hover { color: var(--text); }
   </div>
 </footer>
 
+<!-- PIXEL MINER -->
+<svg class="miner" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <!-- helmet / suit / legs in voxel style -->
+  <g id="minerBody">
+    <rect x="5" y="2" width="6" height="4" fill="#e24b4a"/>
+    <rect x="5" y="2" width="6" height="1" fill="#ff8478"/>
+    <rect x="6" y="3" width="4" height="2" fill="#94f0ff"/>
+    <rect x="4" y="6" width="8" height="5" fill="#a8a0ff"/>
+    <rect x="4" y="6" width="8" height="1" fill="#d6d0ff"/>
+    <rect x="3" y="7" width="2" height="3" fill="#a8a0ff"/>
+    <rect x="11" y="7" width="2" height="3" fill="#a8a0ff"/>
+    <!-- legs (animated) -->
+    <rect id="leg1" x="5" y="11" width="2" height="4" fill="#463db0"/>
+    <rect id="leg2" x="9" y="11" width="2" height="4" fill="#463db0"/>
+    <!-- pickaxe -->
+    <rect x="12" y="5" width="1" height="3" fill="#f0b84a"/>
+    <rect x="11" y="4" width="3" height="1" fill="#94f0ff"/>
+  </g>
+</svg>
+
 <script>
+/* ─── CUSTOM CURSOR ─── */
+(function cursor() {
+  const el = document.getElementById('cursor');
+  const co = document.getElementById('coords');
+  if (!el) return;
+  let raf = null, tx = 0, ty = 0, cx = 0, cy = 0;
+  function loop() {
+    cx += (tx - cx) * 0.35;
+    cy += (ty - cy) * 0.35;
+    el.style.transform = `translate(${cx}px, ${cy}px)`;
+    co.textContent = `X ${String(Math.round(tx)).padStart(3,'0')} · Y ${String(Math.round(ty)).padStart(3,'0')}`;
+    raf = requestAnimationFrame(loop);
+  }
+  window.addEventListener('mousemove', (e) => {
+    tx = e.clientX; ty = e.clientY;
+    if (!raf) loop();
+  });
+  // hover state on interactive elements
+  const hoverables = 'a, button, .feat, .voxel-chunk svg g, .orbit-pt';
+  document.addEventListener('mouseover', (e) => {
+    if (e.target.closest(hoverables)) el.classList.add('hover');
+  });
+  document.addEventListener('mouseout', (e) => {
+    if (!e.relatedTarget || !e.relatedTarget.closest(hoverables)) el.classList.remove('hover');
+  });
+})();
+
+/* ─── BOOT SEQUENCE ─── */
+(function boot() {
+  const el = document.getElementById('boot');
+  const cd = document.getElementById('bootCountdown');
+  const decode = document.getElementById('bootDecode');
+  if (!el) return;
+  const chars = '0123456789abcdef';
+  let i = 0; let target = '';
+  for (let k = 0; k < 8; k++) target += chars[Math.floor(Math.random() * 16)];
+  const dInt = setInterval(() => {
+    if (i >= 8) { decode.textContent = target; clearInterval(dInt); return; }
+    decode.textContent = target.slice(0, i+1) + '_'.repeat(7 - i);
+    i++;
+  }, 120);
+
+  let t = 2;
+  cd.textContent = t;
+  const cdInt = setInterval(() => {
+    t -= 1;
+    cd.textContent = Math.max(0, t);
+    if (t <= 0) { dismiss(); clearInterval(cdInt); }
+  }, 1000);
+
+  function dismiss() {
+    el.classList.add('gone');
+    setTimeout(() => el.remove(), 700);
+  }
+  el.addEventListener('click', dismiss);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') dismiss();
+  }, { once: true });
+})();
+
 /* ─── STARFIELD ─── */
 (function stars() {
   const c = document.getElementById('stars');
   if (!c) return;
   const ctx = c.getContext('2d');
   let w, h, dpr, layers;
-
   function resize() {
     dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
-    w = c.clientWidth = window.innerWidth;
-    h = c.clientHeight = window.innerHeight;
+    w = window.innerWidth; h = window.innerHeight;
     c.width = w * dpr; c.height = h * dpr;
+    c.style.width = w + 'px'; c.style.height = h + 'px';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     seed();
   }
-
   function seed() {
     layers = [
-      { count: 140, speed: 0.02, size: [0.4, 1.0], color: 'rgba(214,208,255,0.55)', stars: [] },
-      { count: 80,  speed: 0.05, size: [0.6, 1.4], color: 'rgba(168,160,255,0.85)', stars: [] },
-      { count: 30,  speed: 0.10, size: [1.0, 2.2], color: 'rgba(148,240,255,1)',    stars: [] },
+      { count: 160, speed: 0.03, size: [0.4, 1.0], color: 'rgba(214,208,255,0.55)', stars: [] },
+      { count: 90,  speed: 0.06, size: [0.6, 1.4], color: 'rgba(168,160,255,0.85)', stars: [] },
+      { count: 30,  speed: 0.12, size: [1.0, 2.2], color: 'rgba(148,240,255,1)',    stars: [] },
     ];
-    for (const L of layers) {
-      for (let i = 0; i < L.count; i++) {
-        L.stars.push({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          r: L.size[0] + Math.random() * (L.size[1] - L.size[0]),
-          tw: Math.random() * Math.PI * 2,
-        });
-      }
-    }
+    for (const L of layers) for (let i = 0; i < L.count; i++) L.stars.push({
+      x: Math.random() * w, y: Math.random() * h,
+      r: L.size[0] + Math.random() * (L.size[1] - L.size[0]),
+      tw: Math.random() * Math.PI * 2,
+    });
   }
-
   let t = 0;
   function frame() {
     t += 1;
@@ -1393,79 +1762,647 @@ footer a:hover { color: var(--text); }
       for (const s of L.stars) {
         s.y += L.speed;
         if (s.y > h) { s.y = 0; s.x = Math.random() * w; }
-        const a = 0.6 + 0.4 * Math.sin(t * 0.04 + s.tw);
+        const a = 0.5 + 0.5 * Math.sin(t * 0.04 + s.tw);
         ctx.globalAlpha = a;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
       }
     }
     ctx.globalAlpha = 1;
     requestAnimationFrame(frame);
   }
-
   resize();
   window.addEventListener('resize', resize);
   frame();
 })();
 
-/* ─── TICKER ─── */
-(function ticker() {
+/* ─── TOP BROADCAST ─── */
+(function broadcast() {
   const items = [
-    ['FORGE', '0.00', 'demo'],
-    ['CIPHER', '0.00', 'demo'],
-    ['IRON', '0.000', 'demo'],
-    ['COAL', '0.000', 'demo'],
-    ['GOLD', '0.00', 'demo'],
-    ['STONE', '0.000', 'demo'],
-    ['DIAM', '0.00', 'demo'],
-    ['NULL', '0.0', 'demo'],
-    ['SECTOR', '0xB1', 'live'],
-    ['BLOCK', '#0', 'genesis'],
-    ['NODES', '0', 'standby'],
-    ['UPTIME', 'BETA', 'live'],
+    ['BITROCA', '•', 'persistent voxel verse'],
+    ['BREAK', '·', 'mine forge blocks'],
+    ['VERIFY', '·', 'on-chain economy'],
+    ['OPEN', '·', 'beta live'],
+    ['SECTOR', '·', '0xB1'],
+    ['ONE WORLD', '·', 'one chain'],
+    ['CLAIM ANYWHERE', '·', '200×100 plots'],
+    ['NO RESETS', '·', 'no wipes (post-beta)'],
+    ['MINE', '·', 'OWN · TRADE'],
+    ['VIEW ON STEAM', '↗', ''],
   ];
-  const track = document.getElementById('tickerTrack');
-  if (!track) return;
-  const html = items.map(([s, v, t]) =>
-    `<span class="ticker-item"><span class="sym">${s}</span> <b>${v}</b> <span style="color:var(--muted-2)">· ${t}</span></span>`
-  ).join(' ');
-  track.innerHTML = html + ' ' + html;
+  const t = document.getElementById('broadcastTrack');
+  if (!t) return;
+  const html = items.map(([s, v, m]) =>
+    `<span>▸ ${s} <b>${v}</b> <span class="amber">· ${m}</span></span>`
+  ).join('  ');
+  t.innerHTML = html + html;
 })();
 
-/* ─── ORBITAL MOTION ─── */
+/* tx feed removed */
+
+/* mini hud removed */
+
+/* voxel chunk removed - replaced with galaxy */
+
+/* ─── HERO GALAXY (live procedural scene) ─── */
+(function galaxy() {
+  const c = document.getElementById('galaxy');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const W = c.width;
+  const H = c.height;
+  const CX = W / 2;
+  const CY = H / 2;
+
+  // ── seeded rng for deterministic look ──
+  let seed = 421337;
+  function rand() { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+
+  // ── background stars (3 parallax layers) ──
+  const stars = [];
+  for (let i = 0; i < 240; i++) stars.push({
+    x: rand() * W, y: rand() * H,
+    r: 0.4 + rand() * 0.6,
+    s: 0.02 + rand() * 0.05,
+    tw: rand() * Math.PI * 2,
+    col: rand() < 0.85 ? 'rgba(214,208,255,0.65)' : 'rgba(148,240,255,0.95)',
+  });
+  for (let i = 0; i < 70; i++) stars.push({
+    x: rand() * W, y: rand() * H,
+    r: 0.8 + rand() * 0.9,
+    s: 0.08 + rand() * 0.08,
+    tw: rand() * Math.PI * 2,
+    col: 'rgba(168,160,255,0.85)',
+  });
+
+  // ── nebula clouds ──
+  const nebulae = [
+    { x: W * 0.2, y: H * 0.3, r: W * 0.42, color: 'rgba(127,119,221,0.18)' },
+    { x: W * 0.8, y: H * 0.7, r: W * 0.45, color: 'rgba(89,229,255,0.10)' },
+    { x: W * 0.5, y: H * 0.5, r: W * 0.32, color: 'rgba(255,94,200,0.08)' },
+  ];
+
+  // ── planets (orbiting + rendered with shading) ──
+  const planets = [
+    { orbit: 200, angle: 0,   speed: 0.0024, size: 28, hue: 'violet', moons: 1, ring: false },
+    { orbit: 290, angle: 1.2, speed: 0.0016, size: 22, hue: 'teal',   moons: 0, ring: true  },
+    { orbit: 380, angle: 2.4, speed: 0.0011, size: 34, hue: 'magenta',moons: 2, ring: false },
+    { orbit: 460, angle: 4.1, speed: 0.0008, size: 18, hue: 'amber',  moons: 0, ring: false },
+  ];
+  const planetPalette = {
+    violet:  { core: '#a8a0ff', mid: '#7f77dd', dark: '#3a2f7a', glow: 'rgba(127,119,221,0.5)' },
+    teal:    { core: '#bff5ff', mid: '#59e5ff', dark: '#1a6a82', glow: 'rgba(89,229,255,0.5)' },
+    magenta: { core: '#ffb1de', mid: '#ff5ec8', dark: '#6a1a4a', glow: 'rgba(255,94,200,0.5)' },
+    amber:   { core: '#ffd87a', mid: '#f0b84a', dark: '#7a5018', glow: 'rgba(240,184,74,0.5)' },
+  };
+
+  // ── asteroid belt ──
+  const asteroids = [];
+  for (let i = 0; i < 38; i++) {
+    asteroids.push({
+      angle: rand() * Math.PI * 2,
+      r: 330 + rand() * 30,
+      size: 1.2 + rand() * 2.2,
+      speed: 0.0006 + rand() * 0.0008,
+    });
+  }
+
+  // ── spaceships (player + alien) ──
+  // path types:
+  //  cruise: enters from one edge, exits the other (straight-ish with subtle curve)
+  //  patrol: figure-8 around the system
+  //  orbit:  orbits a specific radius
+  const ships = [];
+  function spawnShip(faction) {
+    const path = ['cruise', 'cruise', 'patrol', 'orbit'][Math.floor(rand() * 4)];
+    const colorPlayer = '#94f0ff';
+    const colorAlien  = '#ff5ec8';
+    const colorAux    = '#a8a0ff';
+    const fcol = faction === 'player' ? colorPlayer : (faction === 'alien' ? colorAlien : colorAux);
+    const ship = {
+      faction,           // 'player' | 'alien' | 'freighter'
+      path,
+      x: 0, y: 0, angle: 0,
+      speed: 0.6 + rand() * 0.8,
+      color: fcol,
+      trail: [],
+      maxTrail: 18 + Math.floor(rand() * 8),
+      size: faction === 'freighter' ? 7 : (faction === 'alien' ? 6 : 5),
+      hue: fcol,
+      t: rand() * 1000,
+      life: 0,
+      maxLife: 0,
+      bobs: rand() * Math.PI * 2,
+    };
+    if (path === 'cruise') {
+      // entry edge & exit edge
+      const side = Math.floor(rand() * 4);
+      const entry = [
+        { x: -40, y: rand() * H },
+        { x: W + 40, y: rand() * H },
+        { x: rand() * W, y: -40 },
+        { x: rand() * W, y: H + 40 },
+      ][side];
+      const exit = [
+        { x: W + 40, y: rand() * H },
+        { x: -40, y: rand() * H },
+        { x: rand() * W, y: H + 40 },
+        { x: rand() * W, y: -40 },
+      ][side];
+      ship.startX = entry.x; ship.startY = entry.y;
+      ship.endX   = exit.x;  ship.endY   = exit.y;
+      // bezier control point for a curved cruise
+      ship.cx = CX + (rand() - 0.5) * 200;
+      ship.cy = CY + (rand() - 0.5) * 200;
+      ship.maxLife = 320 + rand() * 280;
+      ship.life = 0;
+    } else if (path === 'patrol') {
+      ship.lobeR = 220 + rand() * 100;
+      ship.lobeT = 0.0024 + rand() * 0.001;
+      ship.phase = rand() * Math.PI * 2;
+    } else if (path === 'orbit') {
+      ship.orbitR = 150 + rand() * 280;
+      ship.orbitSpeed = (rand() < 0.5 ? 1 : -1) * (0.002 + rand() * 0.002);
+      ship.orbitAngle = rand() * Math.PI * 2;
+    }
+    ships.push(ship);
+  }
+  // initial fleet
+  spawnShip('player');
+  spawnShip('player');
+  spawnShip('alien');
+  spawnShip('alien');
+  spawnShip('freighter');
+  spawnShip('player');
+
+  // ── comets (rare streaks) ──
+  const comets = [];
+  function spawnComet() {
+    const fromTop = rand() < 0.5;
+    comets.push({
+      x: fromTop ? rand() * W : -50,
+      y: fromTop ? -50 : rand() * H,
+      vx: 3 + rand() * 2,
+      vy: 1.5 + rand() * 1.5,
+      life: 0, max: 160 + rand() * 80,
+      r: 1.6 + rand() * 1.2,
+    });
+  }
+
+  // ── projectiles (rare ship "pings") ──
+  const projectiles = [];
+
+  function drawNebula() {
+    for (const n of nebulae) {
+      const g = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+      g.addColorStop(0, n.color);
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function drawStars(t) {
+    for (const s of stars) {
+      const a = 0.5 + 0.5 * Math.sin(t * 0.04 + s.tw);
+      ctx.globalAlpha = a * (s.s > 0.06 ? 1 : 0.7);
+      ctx.fillStyle = s.col;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+      s.y += s.s;
+      if (s.y > H) { s.y = 0; s.x = (s.x + 73) % W; }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function drawCore(t) {
+    // pulsing star at the center
+    const pulse = 1 + Math.sin(t * 0.04) * 0.04;
+    const r0 = 56 * pulse;
+    const grad = ctx.createRadialGradient(CX, CY, 0, CX, CY, r0);
+    grad.addColorStop(0, 'rgba(255,255,255,1)');
+    grad.addColorStop(0.25, 'rgba(240,184,74,0.9)');
+    grad.addColorStop(0.6,  'rgba(240,184,74,0.25)');
+    grad.addColorStop(1,    'rgba(240,184,74,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(CX, CY, r0 * 2.4, 0, Math.PI * 2); ctx.fill();
+
+    // bright core
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(CX, CY, 14, 0, Math.PI * 2); ctx.fill();
+
+    // crown spikes
+    ctx.strokeStyle = 'rgba(240,184,74,0.45)';
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI / 3) + t * 0.01;
+      ctx.beginPath();
+      ctx.moveTo(CX + Math.cos(a) * 20, CY + Math.sin(a) * 20);
+      ctx.lineTo(CX + Math.cos(a) * (50 + Math.sin(t * 0.02 + i) * 6),
+                 CY + Math.sin(a) * (50 + Math.sin(t * 0.02 + i) * 6));
+      ctx.stroke();
+    }
+  }
+
+  function drawOrbits() {
+    ctx.strokeStyle = 'rgba(127,119,221,0.13)';
+    ctx.lineWidth = 1;
+    for (const p of planets) {
+      ctx.beginPath(); ctx.arc(CX, CY, p.orbit, 0, Math.PI * 2); ctx.stroke();
+    }
+    // belt
+    ctx.setLineDash([2, 6]);
+    ctx.beginPath(); ctx.arc(CX, CY, 345, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function drawAsteroids(t) {
+    ctx.fillStyle = 'rgba(168,160,255,0.55)';
+    for (const a of asteroids) {
+      a.angle += a.speed;
+      const x = CX + Math.cos(a.angle) * a.r;
+      const y = CY + Math.sin(a.angle) * a.r;
+      ctx.beginPath(); ctx.arc(x, y, a.size, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function drawPlanet(p, t) {
+    p.angle += p.speed;
+    const x = CX + Math.cos(p.angle) * p.orbit;
+    const y = CY + Math.sin(p.angle) * p.orbit;
+    const pal = planetPalette[p.hue];
+
+    // glow halo
+    const halo = ctx.createRadialGradient(x, y, p.size * 0.5, x, y, p.size * 2.8);
+    halo.addColorStop(0, pal.glow);
+    halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(x, y, p.size * 2.8, 0, Math.PI * 2); ctx.fill();
+
+    // body — radial gradient (lit side + dark side)
+    const lit = ctx.createRadialGradient(
+      x - p.size * 0.4, y - p.size * 0.5, p.size * 0.1,
+      x, y, p.size
+    );
+    lit.addColorStop(0, pal.core);
+    lit.addColorStop(0.55, pal.mid);
+    lit.addColorStop(1, pal.dark);
+    ctx.fillStyle = lit;
+    ctx.beginPath(); ctx.arc(x, y, p.size, 0, Math.PI * 2); ctx.fill();
+
+    // surface band (subtle)
+    ctx.save();
+    ctx.beginPath(); ctx.arc(x, y, p.size, 0, Math.PI * 2); ctx.clip();
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1;
+    for (let i = -p.size; i <= p.size; i += 5) {
+      ctx.beginPath();
+      ctx.moveTo(x - p.size, y + i + Math.sin(t * 0.01 + i) * 1);
+      ctx.lineTo(x + p.size, y + i + Math.sin(t * 0.01 + i) * 1);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // ring
+    if (p.ring) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(-0.3);
+      ctx.scale(1, 0.32);
+      ctx.strokeStyle = pal.glow;
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(0, 0, p.size * 1.6, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = pal.mid;
+      ctx.beginPath(); ctx.arc(0, 0, p.size * 1.85, 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+
+    // moons
+    for (let m = 0; m < p.moons; m++) {
+      const ma = t * 0.02 + m * Math.PI;
+      const md = p.size + 12 + m * 8;
+      const mx = x + Math.cos(ma) * md;
+      const my = y + Math.sin(ma) * md;
+      ctx.fillStyle = '#d6d0ff';
+      ctx.beginPath(); ctx.arc(mx, my, 2, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  function shipPos(s, dt) {
+    if (s.path === 'cruise') {
+      s.life += dt;
+      const u = s.life / s.maxLife;
+      if (u >= 1) {
+        // respawn this ship with a new path
+        const idx = ships.indexOf(s);
+        if (idx >= 0) {
+          ships.splice(idx, 1);
+          spawnShip(s.faction);
+        }
+        return null;
+      }
+      // quadratic bezier
+      const v = 1 - u;
+      const x = v*v*s.startX + 2*v*u*s.cx + u*u*s.endX;
+      const y = v*v*s.startY + 2*v*u*s.cy + u*u*s.endY;
+      // tangent for angle
+      const tx = 2*v*(s.cx - s.startX) + 2*u*(s.endX - s.cx);
+      const ty = 2*v*(s.cy - s.startY) + 2*u*(s.endY - s.cy);
+      s.angle = Math.atan2(ty, tx);
+      return { x, y, u };
+    } else if (s.path === 'patrol') {
+      s.phase += s.lobeT;
+      // lissajous-ish figure
+      const x = CX + Math.cos(s.phase) * s.lobeR;
+      const y = CY + Math.sin(s.phase * 2) * (s.lobeR * 0.55);
+      const tx = -Math.sin(s.phase) * s.lobeR;
+      const ty = Math.cos(s.phase * 2) * s.lobeR * 1.1;
+      s.angle = Math.atan2(ty, tx);
+      return { x, y };
+    } else { // orbit
+      s.orbitAngle += s.orbitSpeed;
+      const x = CX + Math.cos(s.orbitAngle) * s.orbitR;
+      const y = CY + Math.sin(s.orbitAngle) * s.orbitR;
+      s.angle = s.orbitAngle + (s.orbitSpeed > 0 ? Math.PI/2 : -Math.PI/2);
+      return { x, y };
+    }
+  }
+
+  function drawShip(s) {
+    ctx.save();
+    ctx.translate(s.x, s.y);
+    ctx.rotate(s.angle);
+
+    // trail
+    if (s.trail.length > 1) {
+      ctx.save();
+      ctx.rotate(-s.angle);
+      ctx.translate(-s.x, -s.y);
+      ctx.beginPath();
+      for (let i = 0; i < s.trail.length; i++) {
+        const p = s.trail[i];
+        if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+      }
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 1.2;
+      ctx.globalAlpha = 0.45;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+
+    // ship body
+    if (s.faction === 'player') {
+      // pixel arrow
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      ctx.moveTo(s.size * 1.6, 0);
+      ctx.lineTo(-s.size, s.size * 0.9);
+      ctx.lineTo(-s.size * 0.5, 0);
+      ctx.lineTo(-s.size, -s.size * 0.9);
+      ctx.closePath();
+      ctx.fill();
+      // cockpit
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(s.size * 0.2, -1, 2, 2);
+      // engine glow
+      ctx.fillStyle = 'rgba(148,240,255,0.6)';
+      ctx.beginPath(); ctx.arc(-s.size * 0.8, 0, s.size * 0.55, 0, Math.PI * 2); ctx.fill();
+    } else if (s.faction === 'alien') {
+      // hexagonal alien craft
+      ctx.fillStyle = s.color;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        const x = Math.cos(a) * s.size;
+        const y = Math.sin(a) * s.size * 0.55;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+      // eye
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(0, 0, s.size * 0.25, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#ff5ec8';
+      ctx.beginPath(); ctx.arc(0, 0, s.size * 0.15, 0, Math.PI * 2); ctx.fill();
+      // wing lights
+      ctx.fillStyle = 'rgba(255,94,200,0.8)';
+      ctx.fillRect(-s.size * 0.9, -1.5, 1.5, 3);
+      ctx.fillRect(s.size * 0.6, -1.5, 1.5, 3);
+    } else {
+      // freighter — rectangular hauler
+      ctx.fillStyle = s.color;
+      ctx.fillRect(-s.size, -s.size * 0.55, s.size * 2.2, s.size * 1.1);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(s.size * 0.6, -1, 2, 2);
+      ctx.fillStyle = 'rgba(127,119,221,0.6)';
+      ctx.fillRect(-s.size * 1.2, -2, 2, 4);
+    }
+    ctx.restore();
+  }
+
+  let lastT = performance.now();
+  let projTimer = 0;
+  let cometTimer = 0;
+  let frame = 0;
+
+  function tick(now) {
+    const dt = Math.min(2, (now - lastT) / 16.67); // delta in frames
+    lastT = now;
+    frame++;
+
+    ctx.fillStyle = 'rgba(4,2,12,0.45)';
+    ctx.fillRect(0, 0, W, H);
+
+    drawNebula();
+    drawStars(frame);
+    drawOrbits();
+    drawAsteroids(frame);
+
+    // planets behind their own moons, drawn back-to-front by orbit
+    const ordered = planets.slice().sort((a, b) => a.orbit - b.orbit);
+    for (const p of ordered) drawPlanet(p, frame);
+
+    drawCore(frame);
+
+    // ships
+    for (const s of ships.slice()) {
+      const pos = shipPos(s, dt);
+      if (!pos) continue;
+      s.x = pos.x; s.y = pos.y;
+      s.trail.push({ x: s.x, y: s.y });
+      if (s.trail.length > s.maxTrail) s.trail.shift();
+      drawShip(s);
+    }
+
+    // projectiles
+    projTimer += dt;
+    if (projTimer > 30 + rand() * 60 && ships.length) {
+      projTimer = 0;
+      const s = ships[Math.floor(rand() * ships.length)];
+      if (s.faction !== 'freighter') {
+        projectiles.push({
+          x: s.x, y: s.y,
+          vx: Math.cos(s.angle) * 4,
+          vy: Math.sin(s.angle) * 4,
+          color: s.color,
+          life: 60,
+        });
+      }
+    }
+    for (const p of projectiles.slice()) {
+      p.x += p.vx; p.y += p.vy; p.life--;
+      if (p.life <= 0 || p.x < -20 || p.y < -20 || p.x > W + 20 || p.y > H + 20) {
+        projectiles.splice(projectiles.indexOf(p), 1);
+        continue;
+      }
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.min(1, p.life / 30);
+      ctx.fillRect(p.x - 1, p.y - 1, 2, 2);
+      ctx.globalAlpha = 1;
+    }
+
+    // comets
+    cometTimer += dt;
+    if (cometTimer > 180 + rand() * 200) {
+      cometTimer = 0;
+      spawnComet();
+    }
+    for (const c of comets.slice()) {
+      c.x += c.vx; c.y += c.vy; c.life++;
+      if (c.life > c.max) { comets.splice(comets.indexOf(c), 1); continue; }
+      const a = Math.min(1, c.life / 20) * Math.min(1, (c.max - c.life) / 40);
+      ctx.strokeStyle = 'rgba(255,255,255,' + (0.6 * a) + ')';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(c.x, c.y);
+      ctx.lineTo(c.x - c.vx * 7, c.y - c.vy * 7);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,' + a + ')';
+      ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); ctx.fill();
+    }
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+
+/* ─── ORBITAL MAP (planets + tooltip) ─── */
 (function orbital() {
-  const group = document.getElementById('orbitGroup');
-  if (!group) return;
-  const items = group.querySelectorAll('.orbit-pt');
-  const speeds = [0.18, 0.12, 0.09, 0.07, 0.05, 0.04];
+  const svg = document.getElementById('orbitalMap');
+  const g = document.getElementById('orbitGroup');
+  const tip = document.getElementById('orbitTip');
+  if (!g) return;
+  const NS = 'http://www.w3.org/2000/svg';
+
+  const bodies = [
+    { name: '—', type: 'Open plot', owner: 'unclaimed', plot: '200×100', tier: '—', r: 80,  start: 0,   size: 9, fill: 'url(#planetGrad)',  label: '#a8a0ff' },
+    { name: '—', type: 'Open plot', owner: 'unclaimed', plot: '200×100', tier: '—', r: 140, start: 120, size: 7, fill: 'url(#bodyTeal)',    label: '#94f0ff' },
+    { name: '—', type: 'PvP arena', owner: 'public',    plot: '200×100', tier: '—', r: 140, start: 245, size: 6, fill: 'url(#bodyMagenta)', label: '#ff5ec8' },
+    { name: '—', type: 'Outer shard', owner: 'unclaimed', plot: '—',     tier: '—', r: 210, start: 60,  size: 5, fill: '#f0b84a',           label: '#f0b84a' },
+    { name: '—', type: 'Outer shard', owner: 'unclaimed', plot: '—',     tier: '—', r: 210, start: 200, size: 4, fill: '#a8a0ff',           label: '#a8a0ff' },
+    { name: '—', type: 'Outer shard', owner: 'unclaimed', plot: '—',     tier: '—', r: 270, start: 330, size: 4, fill: '#a8a0ff', opacity: 0.7, label: '#a8a0ff' },
+    { name: '—', type: 'Outer shard', owner: 'unclaimed', plot: '—',     tier: '—', r: 270, start: 90,  size: 3, fill: '#94f0ff', opacity: 0.7, label: '#94f0ff' },
+  ];
+
+  const elements = [];
+  bodies.forEach((b, i) => {
+    const wrap = document.createElementNS(NS, 'g');
+    wrap.setAttribute('class', 'orbit-pt');
+    wrap.dataset.base = b.start;
+    wrap.dataset.r = b.r;
+    wrap.dataset.i = i;
+    wrap.setAttribute('transform', `rotate(${b.start} 300 300)`);
+
+    const inner = document.createElementNS(NS, 'g');
+    inner.setAttribute('transform', `translate(${300 + b.r} 300)`);
+    const body = document.createElementNS(NS, 'circle');
+    body.setAttribute('class', 'body');
+    body.setAttribute('r', b.size);
+    body.setAttribute('fill', b.fill);
+    if (b.opacity) body.setAttribute('opacity', b.opacity);
+    body.style.color = b.label;
+    inner.appendChild(body);
+    // ring outline
+    const halo = document.createElementNS(NS, 'circle');
+    halo.setAttribute('r', b.size + 3);
+    halo.setAttribute('fill', 'none');
+    halo.setAttribute('stroke', b.label);
+    halo.setAttribute('stroke-opacity', '0.35');
+    halo.setAttribute('stroke-width', '0.8');
+    inner.appendChild(halo);
+    // (labels removed)
+
+    wrap.appendChild(inner);
+    wrap.style.cursor = 'none';
+    wrap.addEventListener('mouseenter', () => {
+      showTip(b, wrap);
+    });
+    wrap.addEventListener('mouseleave', () => hideTip());
+
+    g.appendChild(wrap);
+    elements.push({ wrap, body: b });
+  });
+
+  function showTip(b, wrap) {
+    tip.classList.add('on');
+    document.getElementById('otName').textContent  = b.name === '—' ? 'Open plot' : b.name;
+    document.getElementById('otType').textContent  = b.type;
+    document.getElementById('otOwner').textContent = b.owner;
+    document.getElementById('otPlot').textContent  = b.plot;
+    document.getElementById('otTier').textContent  = b.tier;
+    positionTip(wrap);
+  }
+  function hideTip() { tip.classList.remove('on'); }
+  function positionTip(wrap) {
+    const stage = svg.parentElement;
+    const sRect = stage.getBoundingClientRect();
+    const wRect = wrap.getBoundingClientRect();
+    const cx = wRect.left + wRect.width / 2 - sRect.left;
+    const cy = wRect.top  + wRect.height / 2 - sRect.top;
+    tip.style.left = cx + 'px';
+    tip.style.top = cy + 'px';
+  }
+
+  // orbit motion
+  const speeds = [0.16, 0.11, 0.085, 0.07, 0.06, 0.05, 0.04];
   let frame = 0;
   function tick() {
     frame++;
-    items.forEach((el, i) => {
-      const base = parseFloat(el.dataset.base || el.getAttribute('transform').match(/rotate\((-?\d+(\.\d+)?)/)[1]);
-      el.dataset.base = base;
+    elements.forEach((el, i) => {
+      const base = parseFloat(el.wrap.dataset.base);
       const angle = (base + frame * (speeds[i] || 0.05)) % 360;
-      el.setAttribute('transform', `rotate(${angle} 300 300)`);
+      el.wrap.setAttribute('transform', `rotate(${angle} 300 300)`);
+      // keep tooltip glued to body during hover
+      if (tip.classList.contains('on') && tip.dataset.bound === String(i)) {
+        positionTip(el.wrap);
+      }
     });
+    // also drift comet
+    const c = document.getElementById('comet');
+    if (c) {
+      const cx = 600 - ((frame * 0.5) % 700);
+      const cy = 80 + Math.sin(frame * 0.005) * 40;
+      c.setAttribute('transform', `translate(${cx} ${cy})`);
+    }
     requestAnimationFrame(tick);
   }
   tick();
 })();
 
-/* ─── COMET PULSE ─── */
-(function comet() {
-  const c = document.getElementById('comet');
-  if (!c) return;
+/* hud hash flicker removed */
+
+/* ─── PIXEL MINER LEG ANIMATION ─── */
+(function miner() {
+  const l1 = document.getElementById('leg1');
+  const l2 = document.getElementById('leg2');
+  if (!l1) return;
   let t = 0;
-  function tick() {
-    t += 1;
-    const x = 600 - ((t * 0.6) % 700);
-    const y = 80 + Math.sin(t * 0.005) * 40;
-    c.setAttribute('transform', `translate(${x} ${y})`);
-    requestAnimationFrame(tick);
-  }
-  tick();
+  setInterval(() => {
+    t++;
+    const offset = (t % 2 === 0) ? 0 : 1;
+    l1.setAttribute('y', 11 + offset);
+    l2.setAttribute('y', 11 + (1 - offset));
+  }, 150);
 })();
 
 /* ─── LIVE STATS WIRER ─── */

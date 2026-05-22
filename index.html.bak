@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bitroca — Break &amp; Verify keeps the world alive.</title>
+<meta name="description" content="A persistent multiplayer voxel world with a live economy. Open beta." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=VT323&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --font-d: 'Space Grotesk', system-ui, sans-serif;
+  --font-m: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* deep space palette */
+  --bg-0: #04020c;        /* void */
+  --bg-1: #08051a;        /* deep space */
+  --bg-2: #0e0a26;        /* nebula floor */
+  --bg-3: #1a1340;
+
+  --violet:    #7f77dd;
+  --violet-l:  #a8a0ff;
+  --violet-ll: #d6d0ff;
+  --violet-d:  #463db0;
+
+  --teal:    #59e5ff;
+  --teal-l:  #94f0ff;
+
+  --amber: #f0b84a;
+  --magenta: #ff5ec8;
+  --red: #ff5a6e;
+
+  --text: #e8e4ff;
+  --muted: rgba(214, 208, 255, 0.6);
+  --muted-2: rgba(214, 208, 255, 0.32);
+  --line: rgba(127, 119, 221, 0.18);
+  --line-2: rgba(127, 119, 221, 0.32);
+  --line-3: rgba(127, 119, 221, 0.55);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: var(--bg-0); color: var(--text); }
+body {
+  font-family: var(--font-m);
+  font-size: 14px; line-height: 1.6;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ─────────── COSMIC BACKGROUND ─────────── */
+.space-bg {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(127, 119, 221, 0.18), transparent 50%),
+    radial-gradient(ellipse at 85% 80%, rgba(89, 229, 255, 0.10), transparent 55%),
+    radial-gradient(ellipse at 50% 110%, rgba(255, 94, 200, 0.10), transparent 55%),
+    radial-gradient(circle at 50% 50%, var(--bg-1), var(--bg-0) 70%);
+}
+.space-bg::after {
+  /* fine grid */
+  content: ''; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(127, 119, 221, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(127, 119, 221, 0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 95%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, #000 40%, transparent 95%);
+}
+canvas#stars {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  width: 100%; height: 100%;
+}
+
+/* scanline + noise */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px);
+  mix-blend-mode: overlay;
+}
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='1'/></svg>");
+  opacity: 0.04;
+  mix-blend-mode: overlay;
+}
+
+main, nav, footer { position: relative; z-index: 2; }
+
+/* ─────────── NAV ─────────── */
+nav.top {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px;
+  background: rgba(8, 5, 26, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.logo {
+  display: inline-flex; align-items: center; gap: 12px;
+  text-decoration: none; color: var(--violet-ll);
+  font-family: var(--font-d); font-weight: 700; font-size: 18px;
+  letter-spacing: -0.01em;
+}
+.logo img {
+  height: 140px; width: auto; display: block;
+  filter: drop-shadow(0 4px 16px rgba(127, 119, 221, 0.4));
+}
+.nav-links {
+  display: flex; gap: 28px; align-items: center;
+  font-family: var(--font-m); font-size: 12px; letter-spacing: 0.06em;
+}
+.nav-links a {
+  color: var(--muted); text-decoration: none;
+  text-transform: uppercase; transition: color .2s;
+}
+.nav-links a:hover { color: var(--violet-l); }
+.nav-right { display: flex; align-items: center; gap: 14px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-m); font-size: 10.5px;
+  letter-spacing: 0.14em; text-transform: uppercase;
+  padding: 6px 12px; border: 1px solid var(--line-2);
+  border-radius: 30px; color: var(--teal-l);
+  background: rgba(89, 229, 255, 0.04);
+}
+.pill::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--teal-l); box-shadow: 0 0 10px var(--teal-l);
+  animation: blink 1.6s infinite;
+}
+@keyframes blink { 0%, 60% { opacity: 1; } 80%, 100% { opacity: 0.3; } }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-m); font-weight: 600; font-size: 12px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 10px 18px; border-radius: 6px;
+  text-decoration: none; transition: all .2s;
+  cursor: pointer; border: 1px solid transparent;
+}
+.btn-primary {
+  background: linear-gradient(180deg, #5b52c8, #463db0);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(70, 61, 176, 0.4),
+              inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(70, 61, 176, 0.55),
+              inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+.btn-ghost {
+  background: transparent; color: var(--violet-ll);
+  border-color: var(--line-2);
+}
+.btn-ghost:hover {
+  border-color: var(--violet-l); color: var(--text);
+  background: rgba(127, 119, 221, 0.06);
+}
+
+/* ─────────── TICKER ─────────── */
+.ticker {
+  display: flex; overflow: hidden; gap: 0;
+  border-bottom: 1px solid var(--line);
+  background: rgba(8, 5, 26, 0.6);
+  font-family: var(--font-m); font-size: 11px;
+}
+.ticker-track {
+  display: flex; gap: 36px; padding: 10px 0;
+  animation: tickerScroll 120s linear infinite;
+  white-space: nowrap;
+}
+@keyframes tickerScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.ticker-item {
+  display: inline-flex; align-items: center; gap: 8px;
+  color: var(--muted);
+}
+.ticker-item b { color: var(--violet-ll); font-weight: 600; }
+.ticker-item .sym { color: var(--teal-l); letter-spacing: 0.1em; }
+
+/* ─────────── HERO ─────────── */
+.hero {
+  position: relative;
+  padding: 96px 28px 80px;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+}
+.hero-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  position: relative; z-index: 2;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--font-m); font-size: 10.5px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 7px 14px; border: 1px solid var(--line-2);
+  border-radius: 30px; color: var(--amber);
+  background: rgba(240, 184, 74, 0.04);
+  margin-bottom: 32px;
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--amber); box-shadow: 0 0 12px var(--amber);
+  animation: blink 1.6s infinite;
+}
+.hero h1 {
+  font-family: var(--font-d); font-weight: 700;
+  font-size: clamp(54px, 8vw, 120px);
+  line-height: 0.94; letter-spacing: -0.04em;
+  margin-bottom: 28px;
+  text-shadow: 0 0 40px rgba(127, 119, 221, 0.3);
+}
+.hero h1 .a {
+  color: var(--violet);
+  background: linear-gradient(180deg, var(--violet-l), var(--violet));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero h1 .b {
+  background: linear-gradient(180deg, var(--teal-l), var(--teal));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.hero h1 .amp {
+  color: var(--muted-2); font-weight: 400;
+  font-style: italic;
+}
+.hero h1 .keeps {
+  display: block;
+  font-size: 0.42em;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: 0.01em;
+  margin-top: 22px;
+  line-height: 1.2;
+}
+.hero h1 .keeps .alive {
+  color: var(--amber);
+  position: relative;
+}
+.hero h1 .keeps .alive::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -2px;
+  height: 2px; background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+}
+.hero-sub {
+  font-family: var(--font-m); font-size: 14.5px;
+  color: var(--muted); line-height: 1.7;
+  max-width: 580px; margin: 0 auto 36px;
+}
+.hero-ctas {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  justify-content: center; margin-bottom: 48px;
+}
+.hero-meta {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(8, 5, 26, 0.5);
+  backdrop-filter: blur(8px);
+  width: 100%; max-width: 720px;
+  text-align: left;
+  overflow: hidden;
+}
+.hero-meta > div {
+  padding: 14px 18px; border-right: 1px solid var(--line);
+  position: relative;
+}
+.hero-meta > div:last-child { border-right: none; }
+.hero-meta > div::before {
+  content: ''; position: absolute; top: 8px; right: 8px;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--violet); opacity: 0.5;
+}
+.hero-meta .l {
+  font-family: var(--font-m); font-size: 9.5px;
+  color: var(--muted); letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.hero-meta .v {
+  font-family: var(--font-d); font-size: 22px;
+  font-weight: 700; color: var(--violet-ll);
+  margin-top: 4px;
+}
+.hero-meta .v .delta {
+  font-family: var(--font-m); font-size: 10px;
+  font-weight: 500; margin-left: 6px; color: var(--teal-l);
+}
+
+/* HERO planet visual */
+.hero-planet {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(820px, 90vw); aspect-ratio: 1;
+  z-index: 1; pointer-events: none;
+  opacity: 0.55;
+}
+.hero-planet .ring {
+  position: absolute; inset: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  animation: spin 120s linear infinite;
+}
+.hero-planet .ring.r2 {
+  inset: 8%; border-style: dashed;
+  border-color: var(--line);
+  animation-duration: 200s;
+  animation-direction: reverse;
+}
+.hero-planet .ring.r3 {
+  inset: 18%; border-color: var(--line);
+}
+.hero-planet .core {
+  position: absolute; inset: 32%; border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(127, 119, 221, 0.25), transparent 55%),
+    radial-gradient(circle at 70% 80%, rgba(89, 229, 255, 0.15), transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(70, 61, 176, 0.6), rgba(8, 5, 26, 0.85) 70%);
+  box-shadow: 0 0 80px rgba(127, 119, 221, 0.3),
+              inset 0 0 60px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--line-3);
+  animation: spin 240s linear infinite;
+}
+.hero-planet .core::before {
+  /* surface grid */
+  content: ''; position: absolute; inset: 0;
+  border-radius: 50%;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 18px, rgba(127, 119, 221, 0.06) 18px 19px),
+    repeating-linear-gradient(90deg, transparent 0 18px, rgba(127, 119, 221, 0.06) 18px 19px);
+  mask-image: radial-gradient(circle, #000 50%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle, #000 50%, transparent 70%);
+}
+.hero-planet .ring-dot {
+  position: absolute; width: 8px; height: 8px;
+  background: var(--teal-l); border-radius: 50%;
+  box-shadow: 0 0 12px var(--teal-l);
+  top: 50%; left: -4px; margin-top: -4px;
+}
+.hero-planet .ring-dot.d2 {
+  background: var(--magenta); box-shadow: 0 0 12px var(--magenta);
+  top: 8%; left: 50%; margin-left: -4px;
+}
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ─────────── HUD STATS PANEL (cosmic terminal) ─────────── */
+.hud-section {
+  padding: 60px 28px;
+  border-bottom: 1px solid var(--line);
+}
+.hud-inner {
+  max-width: 1200px; margin: 0 auto;
+}
+.hud-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 32px; flex-wrap: wrap; gap: 16px;
+}
+.hud-head .kicker {
+  font-family: var(--font-m); font-size: 10.5px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--violet);
+}
+.hud-head h2 {
+  font-family: var(--font-d); font-weight: 700;
+  font-size: clamp(28px, 4vw, 44px);
+  letter-spacing: -0.02em; line-height: 1;
+  color: var(--violet-ll);
+}
+.hud-head .meta {
+  font-family: var(--font-m); font-size: 11px;
+  color: var(--muted); letter-spacing: 0.06em;
+}
+.hud-head .meta b { color: var(--teal-l); font-weight: 500; }
+
+.hud-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+}
+.hud-card {
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: rgba(8, 5, 26, 0.55);
+  backdrop-filter: blur(8px);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+.hud-card::before {
+  content: ''; position: absolute;
+  top: 12px; right: 12px;
+  width: 16px; height: 16px;
+  border-top: 1px solid var(--violet);
+  border-right: 1px solid var(--violet);
+}
+.hud-card::after {
+  content: ''; position: absolute;
+  bottom: 12px; left: 12px;
+  width: 16px; height: 16px;
+  border-bottom: 1px solid var(--violet);
+  border-left: 1px solid var(--violet);
+}
+.hud-card .lbl {
+  font-family: var(--font-m); font-size: 10px;
+  letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.hud-card .lbl .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--teal-l); box-shadow: 0 0 8px var(--teal-l);
+  animation: blink 2s infinite;
+}
+.hud-card .big {
+  font-family: var(--font-d); font-weight: 700;
+  font-size: clamp(36px, 5vw, 56px);
+  color: var(--violet-ll);
+  letter-spacing: -0.025em; line-height: 1;
+  margin-bottom: 6px;
+}
+.hud-card .big .unit {
+  font-size: 0.4em; color: var(--muted);
+  font-weight: 500; margin-left: 8px;
+  letter-spacing: 0;
+}
+.hud-card .sub {
+  font-family: var(--font-m); font-size: 11.5px;
+  color: var(--muted); letter-spacing: 0.04em;
+}
+.hud-card .sub b { color: var(--amber); font-weight: 500; }
+
+.hud-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.hud-mini {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 18px 20px;
+  background: rgba(8, 5, 26, 0.4);
+}
+.hud-mini .l {
+  font-family: var(--font-m); font-size: 9.5px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--muted-2); margin-bottom: 8px;
+}
+.hud-mini .v {
+  font-family: var(--font-d); font-weight: 700;
+  font-size: 24px; color: var(--text);
+  letter-spacing: -0.02em;
+}
+.hud-mini .v .x { color: var(--teal-l); }
+
+/* the forge log card */
+.forge-log {
+  font-family: var(--font-m); font-size: 12px;
+  display: grid; gap: 10px;
+}
+.forge-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 16px; padding: 10px 0;
+  border-bottom: 1px dashed var(--line);
+  align-items: baseline;
+}
+.forge-row:last-child { border-bottom: none; }
+.forge-row .num {
+  color: var(--violet); font-weight: 600;
+  font-feature-settings: "tnum";
+}
+.forge-row .who { color: var(--text); }
+.forge-row .who b { color: var(--amber); font-weight: 600; }
+.forge-row .when { color: var(--muted-2); font-size: 10.5px; letter-spacing: 0.05em; }
+
+/* ─────────── ORBITAL WORLD MAP ─────────── */
+.orbital {
+  padding: 80px 28px; border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.orbital-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1.4fr;
+  gap: 48px; align-items: center;
+}
+.orbital-copy h3 {
+  font-family: var(--font-d); font-weight: 700;
+  font-size: clamp(28px, 3.6vw, 42px);
+  letter-spacing: -0.02em; line-height: 1.05;
+  color: var(--violet-ll); margin-bottom: 18px;
+}
+.orbital-copy p {
+  font-family: var(--font-m); font-size: 13.5px;
+  color: var(--muted); line-height: 1.75;
+  margin-bottom: 18px;
+}
+.orbital-copy ul {
+  list-style: none; padding: 0; margin: 24px 0 0;
+}
+.orbital-copy li {
+  font-family: var(--font-m); font-size: 12px;
+  padding: 10px 0; border-top: 1px dashed var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  color: var(--muted);
+}
+.orbital-copy li:last-child { border-bottom: 1px dashed var(--line); }
+.orbital-copy li b { color: var(--violet-l); font-weight: 600; }
+
+.orbital-stage {
+  position: relative; aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(127, 119, 221, 0.08), transparent 65%),
+    rgba(4, 2, 12, 0.7);
+  overflow: hidden;
+}
+.orbital-stage::before {
+  /* corner brackets */
+  content: ''; position: absolute; top: 12px; left: 12px;
+  width: 24px; height: 24px;
+  border-top: 1px solid var(--violet); border-left: 1px solid var(--violet);
+}
+.orbital-stage::after {
+  content: ''; position: absolute; bottom: 12px; right: 12px;
+  width: 24px; height: 24px;
+  border-bottom: 1px solid var(--violet); border-right: 1px solid var(--violet);
+}
+.orbital-svg { width: 100%; height: 100%; display: block; }
+.orbital-stage .badge {
+  position: absolute; top: 14px; right: 14px;
+  font-family: var(--font-m); font-size: 9.5px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--teal-l);
+  display: flex; align-items: center; gap: 6px;
+}
+.orbital-stage .badge::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--teal-l); box-shadow: 0 0 8px var(--teal-l);
+  animation: blink 1.4s infinite;
+}
+.orbital-stage .coords {
+  position: absolute; bottom: 14px; left: 14px;
+  font-family: var(--font-m); font-size: 9.5px;
+  letter-spacing: 0.12em; color: var(--muted-2);
+}
+
+/* ─────────── FEATURES (cards) ─────────── */
+.trailer {
+  padding: 80px 28px; border-bottom: 1px solid var(--line);
+  position: relative;
+}
+.trailer-inner { max-width: 1100px; margin: 0 auto; text-align: center; }
+.trailer-frame {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 8px;
+  background: linear-gradient(180deg, rgba(127,119,221,0.08), rgba(127,119,221,0));
+  box-shadow: 0 24px 80px rgba(0,0,0,0.45);
+}
+.features {
+  padding: 96px 28px; border-bottom: 1px solid var(--line);
+}
+.features-inner { max-width: 1280px; margin: 0 auto; }
+.features-head {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 40px; align-items: end; margin-bottom: 56px;
+}
+.features-head .kicker {
+  font-family: var(--font-m); font-size: 10.5px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--violet); margin-bottom: 18px; display: block;
+}
+.features-head h2 {
+  font-family: var(--font-d); font-weight: 700;
+  font-size: clamp(36px, 5.2vw, 64px);
+  letter-spacing: -0.035em; line-height: 0.98;
+  color: var(--violet-ll);
+}
+.features-head h2 em {
+  font-style: italic; color: var(--amber); font-weight: 500;
+}
+.features-head .lede {
+  font-family: var(--font-m); font-size: 14px;
+  color: var(--muted); line-height: 1.75;
+  max-width: 460px; padding-bottom: 8px;
+}
+
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.feat {
+  padding: 32px 28px 30px;
+  background: var(--bg-1);
+  position: relative;
+  min-height: 260px;
+  transition: background .25s;
+}
+.feat:hover {
+  background: linear-gradient(180deg, rgba(127, 119, 221, 0.06), var(--bg-1));
+}
+.feat-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-m); font-size: 10px;
+  color: var(--muted-2); letter-spacing: 0.14em;
+  text-transform: uppercase; margin-bottom: 22px;
+}
+.feat-head .id { color: var(--violet); }
+.feat-ico {
+  width: 44px; height: 44px;
+  margin-bottom: 18px;
+  display: grid;
+  grid-template: repeat(4, 1fr) / repeat(4, 1fr);
+  gap: 2px;
+}
+.feat-ico i { background: transparent; transition: background .2s; }
+/* pixel patterns */
+.feat-ico[data-pattern="pick"] i:nth-child(2),
+.feat-ico[data-pattern="pick"] i:nth-child(3),
+.feat-ico[data-pattern="pick"] i:nth-child(5),
+.feat-ico[data-pattern="pick"] i:nth-child(7),
+.feat-ico[data-pattern="pick"] i:nth-child(10),
+.feat-ico[data-pattern="pick"] i:nth-child(11),
+.feat-ico[data-pattern="pick"] i:nth-child(13),
+.feat-ico[data-pattern="pick"] i:nth-child(16) { background: var(--violet); }
+
+.feat-ico[data-pattern="world"] i:nth-child(2),
+.feat-ico[data-pattern="world"] i:nth-child(3),
+.feat-ico[data-pattern="world"] i:nth-child(5),
+.feat-ico[data-pattern="world"] i:nth-child(8),
+.feat-ico[data-pattern="world"] i:nth-child(9),
+.feat-ico[data-pattern="world"] i:nth-child(12),
+.feat-ico[data-pattern="world"] i:nth-child(14),
+.feat-ico[data-pattern="world"] i:nth-child(15) { background: var(--teal-l); }
+
+.feat-ico[data-pattern="market"] i:nth-child(1),
+.feat-ico[data-pattern="market"] i:nth-child(5),
+.feat-ico[data-pattern="market"] i:nth-child(6),
+.feat-ico[data-pattern="market"] i:nth-child(9),
+.feat-ico[data-pattern="market"] i:nth-child(10),
+.feat-ico[data-pattern="market"] i:nth-child(11),
+.feat-ico[data-pattern="market"] i:nth-child(13),
+.feat-ico[data-pattern="market"] i:nth-child(14),
+.feat-ico[data-pattern="market"] i:nth-child(15),
+.feat-ico[data-pattern="market"] i:nth-child(16) { background: var(--amber); }
+
+.feat-ico[data-pattern="server"] i:nth-child(2),
+.feat-ico[data-pattern="server"] i:nth-child(3),
+.feat-ico[data-pattern="server"] i:nth-child(6),
+.feat-ico[data-pattern="server"] i:nth-child(7),
+.feat-ico[data-pattern="server"] i:nth-child(10),
+.feat-ico[data-pattern="server"] i:nth-child(11),
+.feat-ico[data-pattern="server"] i:nth-child(14),
+.feat-ico[data-pattern="server"] i:nth-child(15) { background: var(--magenta); }
+
+.feat-ico[data-pattern="craft"] i:nth-child(1),
+.feat-ico[data-pattern="craft"] i:nth-child(4),
+.feat-ico[data-pattern="craft"] i:nth-child(6),
+.feat-ico[data-pattern="craft"] i:nth-child(7),
+.feat-ico[data-pattern="craft"] i:nth-child(10),
+.feat-ico[data-pattern="craft"] i:nth-child(11),
+.feat-ico[data-pattern="craft"] i:nth-child(13),
+.feat-ico[data-pattern="craft"] i:nth-child(16) { background: var(--violet-l); }
+
+.feat-ico[data-pattern="chat"] i:nth-child(1),
+.feat-ico[data-pattern="chat"] i:nth-child(2),
+.feat-ico[data-pattern="chat"] i:nth-child(3),
+.feat-ico[data-pattern="chat"] i:nth-child(4),
+.feat-ico[data-pattern="chat"] i:nth-child(5),
+.feat-ico[data-pattern="chat"] i:nth-child(8),
+.feat-ico[data-pattern="chat"] i:nth-child(9),
+.feat-ico[data-pattern="chat"] i:nth-child(12),
+.feat-ico[data-pattern="chat"] i:nth-child(14) { background: var(--teal); }
+
+.feat h3 {
+  font-family: var(--font-d); font-weight: 600;
+  font-size: 22px; color: var(--violet-ll);
+  letter-spacing: -0.01em; margin-bottom: 10px;
+}
+.feat h3 .note {
+  font-family: var(--font-m); font-size: 11px; font-weight: 500;
+  color: var(--muted-2); letter-spacing: 0.04em;
+  display: block; margin-top: 4px;
+}
+.feat p {
+  font-family: var(--font-m); font-size: 12.5px;
+  color: var(--muted); line-height: 1.75;
+}
+.feat-tag {
+  margin-top: 18px;
+  font-family: var(--font-m); font-size: 10px;
+  color: var(--teal-l); letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ─────────── MARKET CHART ─────────── */
+.market {
+  padding: 96px 28px; border-bottom: 1px solid var(--line);
+}
+.market-inner {
+  max-width: 1280px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1.4fr;
+  gap: 32px;
+}
+.market-copy .kicker {
+  font-family: var(--font-m); font-size: 10.5px;
+  letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--violet); margin-bottom: 18px; display: block;
+}
+.market-copy h3 {
+  font-family: var(--font-d); font-weight: 700;
+  font-size: clamp(28px, 3.6vw, 42px);
+  letter-spacing: -0.02em; line-height: 1.05;
+  color: var(--violet-ll); margin-bottom: 22px;
+}
+.market-copy p {
+  font-family: var(--font-m); font-size: 13.5px;
+  color: var(--muted); line-height: 1.75;
+  margin-bottom: 18px;
+}
+.market-stats { display: grid; gap: 10px; margin-top: 24px; }
+.market-stat {
+  display: flex; justify-content: space-between;
+  padding: 10px 0; border-top: 1px dashed var(--line);
+  font-family: var(--font-m); font-size: 12px;
+}
+.market-stat:last-child { border-bottom: 1px dashed var(--line); }
+.market-stat .l { color: var(--muted); letter-spacing: 0.04em; }
+.market-stat .v { color: var(--violet-ll); font-weight: 500; }
+
+.chart-card {
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  background: rgba(8, 5, 26, 0.55);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+  position: relative;
+}
+.chart-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 18px 22px; border-bottom: 1px solid var(--line);
+}
+.chart-head .l {
+  font-family: var(--font-m); font-size: 10.5px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--muted);
+}
+.chart-head .l b { color: var(--violet-ll); font-weight: 600; margin-right: 8px; }
+.chart-head .tabs { display: flex; gap: 4px; }
+.chart-head .tab {
+  font-family: var(--font-m); font-size: 10px; font-weight: 600;
+  letter-spacing: 0.1em; padding: 5px 10px;
+  border: 1px solid var(--line); border-radius: 4px;
+  color: var(--muted); cursor: pointer;
+}
+.chart-head .tab.on {
+  color: var(--violet-ll); border-color: var(--line-3);
+  background: rgba(127, 119, 221, 0.08);
+}
+.chart-body { padding: 16px; position: relative; }
+.chart-body svg { width: 100%; height: 280px; display: block; }
+.chart-axis {
+  position: absolute; left: 16px; right: 16px;
+  font-family: var(--font-m); font-size: 9px;
+  color: var(--muted-2); letter-spacing: 0.06em;
+  display: flex; justify-content: space-between;
+  bottom: 22px;
+}
+
+/* ─────────── CTA ─────────── */
+.cta {
+  padding: 140px 28px;
+  border-bottom: 1px solid var(--line);
+  position: relative; overflow: hidden;
+  text-align: center;
+}
+.cta::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 30% 50%, rgba(127, 119, 221, 0.16), transparent 60%),
+    radial-gradient(ellipse at 70% 50%, rgba(89, 229, 255, 0.10), transparent 60%);
+  pointer-events: none;
+}
+.cta-inner {
+  max-width: 880px; margin: 0 auto;
+  position: relative; z-index: 1;
+}
+.cta .kicker {
+  font-family: var(--font-m); font-size: 11px;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--amber); margin-bottom: 22px; display: inline-block;
+}
+.cta h2 {
+  font-family: var(--font-d); font-weight: 700;
+  font-size: clamp(48px, 7vw, 88px);
+  letter-spacing: -0.04em; line-height: 0.96;
+  margin-bottom: 22px;
+  background: linear-gradient(180deg, var(--violet-ll) 0%, var(--violet) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.cta h2 em { font-style: italic; color: var(--amber); -webkit-text-fill-color: var(--amber); }
+.cta p {
+  font-family: var(--font-m); font-size: 14.5px;
+  color: var(--muted); line-height: 1.7;
+  margin: 0 auto 38px; max-width: 560px;
+}
+.btn-steam {
+  display: inline-flex; align-items: center; gap: 14px;
+  padding: 20px 32px; border-radius: 10px;
+  background: linear-gradient(180deg, #5b52c8 0%, #463db0 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 12px 40px rgba(70, 61, 176, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  color: #fff; text-decoration: none;
+  font-family: var(--font-d); font-weight: 700; font-size: 19px;
+  letter-spacing: -0.01em;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.btn-steam:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 50px rgba(70, 61, 176, 0.65),
+              inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.btn-steam-ico {
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #0a0a1a; border-radius: 50%;
+  font-size: 12px; color: var(--teal-l);
+  box-shadow: inset 0 0 0 1px rgba(148, 240, 255, 0.4);
+}
+.cta-foot {
+  margin-top: 38px;
+  font-family: var(--font-m); font-size: 11px;
+  color: var(--muted-2); letter-spacing: 0.06em;
+}
+
+/* ─────────── FOOTER ─────────── */
+footer {
+  padding: 56px 28px 40px;
+  display: grid;
+  grid-template-columns: 1.4fr repeat(3, 1fr);
+  gap: 40px;
+  border-top: 1px solid var(--line);
+  background: rgba(4, 2, 12, 0.6);
+}
+footer h6 {
+  font-family: var(--font-m); font-size: 10px;
+  color: var(--muted); letter-spacing: 0.18em;
+  text-transform: uppercase; margin-bottom: 14px;
+}
+footer ul { list-style: none; padding: 0; }
+footer ul li { margin-bottom: 8px; }
+footer a {
+  font-family: var(--font-m); font-size: 12px;
+  color: var(--violet-l); text-decoration: none;
+}
+footer a:hover { color: var(--text); }
+.foot-brand p {
+  font-family: var(--font-m); font-size: 12px;
+  color: var(--muted); line-height: 1.7;
+  max-width: 280px; margin-top: 12px;
+}
+.foot-brand .logo img { height: 110px; }
+.foot-bottom {
+  grid-column: 1 / -1;
+  margin-top: 30px; padding-top: 24px;
+  border-top: 1px solid var(--line);
+  display: flex; justify-content: space-between;
+  font-family: var(--font-m); font-size: 11px;
+  color: var(--muted-2); letter-spacing: 0.05em;
+}
+.foot-bottom .glyph {
+  display: inline-block; width: 8px; height: 8px;
+  background: var(--amber); margin-right: 8px;
+}
+
+/* ─────────── RESPONSIVE ─────────── */
+@media (max-width: 1024px) {
+  .hud-grid { grid-template-columns: 1fr; }
+  .orbital-inner { grid-template-columns: 1fr; gap: 32px; }
+  .market-inner { grid-template-columns: 1fr; gap: 28px; }
+  .features-head { grid-template-columns: 1fr; gap: 18px; }
+  .feat-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 720px) {
+  .hud-row { grid-template-columns: 1fr; }
+  .feat-grid { grid-template-columns: 1fr; }
+  .hero-meta { grid-template-columns: 1fr; }
+  .hero-meta > div { border-right: none; border-bottom: 1px solid var(--line); }
+  .nav-links { display: none; }
+  .pill { display: none; }
+  footer { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- COSMIC BACKDROP -->
+<div class="space-bg" aria-hidden="true"></div>
+<canvas id="stars" aria-hidden="true"></canvas>
+
+<!-- NAV -->
+<nav class="top">
+  <a href="#" class="logo" aria-label="Bitroca home">
+    <img src="assets/bitroca-logo.png" alt="Bitroca" />
+  </a>
+  <div class="nav-links">
+    <a href="#hud">Telemetry</a>
+    <a href="#world">The World</a>
+    <a href="#features">Systems</a>
+    <a href="privacy.html">Privacy</a>
+    <a href="eula.html">EULA</a>
+  </div>
+  <div class="nav-right">
+    <span class="pill">Open beta · live</span>
+    <a href="#launch" class="btn btn-primary">View on Steam ↗</a>
+  </div>
+</nav>
+
+<!-- TICKER -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-planet" aria-hidden="true">
+    <div class="ring"><span class="ring-dot"></span></div>
+    <div class="ring r2"><span class="ring-dot d2"></span></div>
+    <div class="ring r3"></div>
+    <div class="core"></div>
+  </div>
+
+  <div class="hero-inner">
+    <span class="hero-badge"><span class="dot"></span> Open beta · play now</span>
+    <h1>
+      <span class="a">Break</span> <span class="amp">&amp;</span> <span class="b">Verify</span>
+      <span class="keeps">keeps the world <span class="alive">alive</span>.</span>
+    </h1>
+    <p class="hero-sub">
+      Bitroca is a persistent voxel world with a live, on-chain economy.
+      Every block you mine, every trade you make, every tower you build —
+      logged, priced, permanent. One server. Open beta. No resets.
+    </p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="#launch">View on Steam ↗</a>
+      <a class="btn btn-ghost" href="#hud">See the telemetry</a>
+    </div>
+    <div class="hero-meta">
+      <div>
+        <div class="l">Server status</div>
+        <div class="v">BETA <span class="delta">· live</span></div>
+      </div>
+      <div>
+        <div class="l">World size</div>
+        <div class="v">∞ <span class="delta">procedural</span></div>
+      </div>
+      <div>
+        <div class="l">Forge reward</div>
+        <div class="v">50 <span class="delta">FORGE</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HUD / TELEMETRY -->
+<section class="hud-section" id="hud">
+  <div class="hud-inner">
+    <div class="hud-head">
+      <div>
+        <div class="kicker">▸ Mission control · /var/log/bitroca</div>
+        <h2>Live telemetry from the void.</h2>
+      </div>
+      <div class="meta">SIGNAL <b>STRONG</b> · LATENCY <b>32ms</b> · DEMO MODE</div>
+    </div>
+
+    <div class="hud-grid">
+      <div class="hud-card">
+        <div class="lbl"><span class="dot"></span> Current chain block</div>
+        <div class="big"><span id="s1">#0</span></div>
+      </div>
+
+      <div class="hud-card">
+        <div class="lbl"><span class="dot"></span> Last forge block</div>
+        <div class="big"><span id="s4">No forge yet</span></div>
+      </div>
+    </div>
+
+    <div class="hud-row">
+      <div class="hud-mini">
+        <div class="l">Active worlds</div>
+        <div class="v"><span class="x" id="s2">0</span></div>
+      </div>
+      <div class="hud-mini">
+        <div class="l">Locked worlds</div>
+        <div class="v"><span class="x" id="s6">0</span></div>
+      </div>
+      <div class="hud-mini">
+        <div class="l">Blocks mined · 24h</div>
+        <div class="v"><span class="x" id="s7">0</span></div>
+      </div>
+    </div>
+
+    <div class="hud-grid" style="margin-top: 16px;">
+      <div class="hud-card">
+        <div class="lbl"><span class="dot"></span> Forge log · last events</div>
+        <div class="forge-log">
+          <div class="forge-row">
+            <span class="num" id="s8">#0</span>
+            <span class="who" id="s9">Awaiting first forge block — be the first.</span>
+            <span class="when" id="s10">—</span>
+          </div>
+          <div class="forge-row">
+            <span class="num">#?</span>
+            <span class="who">Could be <b>you</b></span>
+            <span class="when">—</span>
+          </div>
+          <div class="forge-row">
+            <span class="num">#?</span>
+            <span class="who">Could be <b>you</b></span>
+            <span class="when">—</span>
+          </div>
+        </div>
+      </div>
+      <div class="hud-card">
+        <div class="lbl"><span class="dot"></span> Network signal</div>
+        <svg viewBox="0 0 400 180" preserveAspectRatio="none" style="width:100%; height: 180px; display:block;">
+          <defs>
+            <linearGradient id="sigG" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#7f77dd" stop-opacity="0.45"/>
+              <stop offset="100%" stop-color="#7f77dd" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <g stroke="rgba(127,119,221,0.12)" stroke-dasharray="2 4">
+            <line x1="0" y1="40" x2="400" y2="40"/>
+            <line x1="0" y1="90" x2="400" y2="90"/>
+            <line x1="0" y1="140" x2="400" y2="140"/>
+          </g>
+          <path id="sigArea" fill="url(#sigG)"
+                d="M0,140 L20,135 40,138 60,128 80,132 100,118 120,124 140,108 160,116 180,98 200,104 220,86 240,94 260,78 280,84 300,72 320,80 340,68 360,76 380,62 400,70 L400,180 L0,180 Z"/>
+          <path id="sigLine" fill="none" stroke="#a8a0ff" stroke-width="1.5"
+                d="M0,140 L20,135 40,138 60,128 80,132 100,118 120,124 140,108 160,116 180,98 200,104 220,86 240,94 260,78 280,84 300,72 320,80 340,68 360,76 380,62 400,70"/>
+          <circle cx="400" cy="70" r="4" fill="#94f0ff"/>
+        </svg>
+        <div style="font-family:var(--font-m); font-size:10.5px; color:var(--muted); letter-spacing:0.08em; margin-top:8px; display:flex; justify-content:space-between;">
+          <span>T-24h</span><span>T-12h</span><span>NOW</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ORBITAL WORLD MAP -->
+<section class="orbital" id="world">
+  <div class="orbital-inner">
+    <div class="orbital-copy">
+      <span class="kicker" style="font-family:var(--font-m); font-size:10.5px; letter-spacing:0.2em; text-transform:uppercase; color:var(--violet); margin-bottom:18px; display:block;">▸ Sector 0xB1 · the verse</span>
+      <h3>One persistent universe. Yours to claim.</h3>
+      <p>
+        Bitroca runs as a single procedural universe orbiting a shared chain.
+        Stake a 200×100 plot anywhere in open space — build, lock, share, sell.
+        Worlds persist between sessions; the verse keeps spinning when you log off.
+      </p>
+      <ul>
+        <li><span>Plot size</span><b>200 × 100</b></li>
+        <li><span>Plot cost</span><b>1 FORGE / claim</b></li>
+        <li><span>Visibility</span><b>Public · Private · Lock</b></li>
+        <li><span>PvP zones</span><b>Opt-in arenas</b></li>
+      </ul>
+    </div>
+
+    <div class="orbital-stage">
+      <div class="badge">Live · Demo</div>
+      <div class="coords">SECTOR 0xB1 · 0,0</div>
+      <svg class="orbital-svg" viewBox="0 0 600 600" id="orbitalMap">
+        <defs>
+          <radialGradient id="planetGrad" cx="40%" cy="35%">
+            <stop offset="0%" stop-color="#a8a0ff"/>
+            <stop offset="60%" stop-color="#463db0"/>
+            <stop offset="100%" stop-color="#1a1340"/>
+          </radialGradient>
+          <radialGradient id="sunGrad" cx="50%" cy="50%">
+            <stop offset="0%" stop-color="#fff"/>
+            <stop offset="40%" stop-color="#f0b84a"/>
+            <stop offset="100%" stop-color="#f0b84a" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- distant nebula glow -->
+        <circle cx="300" cy="300" r="280" fill="url(#sunGrad)" opacity="0.05"/>
+
+        <!-- orbits -->
+        <g fill="none" stroke="rgba(127,119,221,0.18)">
+          <circle cx="300" cy="300" r="80"/>
+          <circle cx="300" cy="300" r="140" stroke-dasharray="3 6"/>
+          <circle cx="300" cy="300" r="210"/>
+          <circle cx="300" cy="300" r="270" stroke-dasharray="3 6" stroke="rgba(127,119,221,0.1)"/>
+        </g>
+
+        <!-- crosshair -->
+        <g stroke="rgba(127,119,221,0.18)" stroke-dasharray="4 6">
+          <line x1="0" y1="300" x2="600" y2="300"/>
+          <line x1="300" y1="0" x2="300" y2="600"/>
+        </g>
+
+        <!-- central star -->
+        <circle cx="300" cy="300" r="22" fill="url(#sunGrad)"/>
+        <circle cx="300" cy="300" r="8" fill="#fff"/>
+        <text x="300" y="346" text-anchor="middle"
+              font-family="JetBrains Mono" font-size="9"
+              fill="#94f0ff" letter-spacing="2">CORE-0</text>
+
+        <!-- orbiting planets / claims -->
+        <g id="orbitGroup">
+          <!-- inner planet -->
+          <g class="orbit-pt" transform="rotate(0 300 300)">
+            <g transform="translate(380 300)">
+              <circle r="9" fill="url(#planetGrad)"/>
+              <circle r="11" fill="none" stroke="#7f77dd" stroke-opacity="0.4"/>
+              <text x="14" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#d6d0ff" letter-spacing="1">DEMO-A</text>
+            </g>
+          </g>
+          <g class="orbit-pt" transform="rotate(120 300 300)">
+            <g transform="translate(440 300)">
+              <circle r="7" fill="#94f0ff" opacity="0.85"/>
+              <text x="12" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#94f0ff" letter-spacing="1">DEMO-B</text>
+            </g>
+          </g>
+          <g class="orbit-pt" transform="rotate(245 300 300)">
+            <g transform="translate(440 300)">
+              <circle r="6" fill="#ff5ec8" opacity="0.85"/>
+              <text x="12" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#ff5ec8" letter-spacing="1">DEMO-C</text>
+            </g>
+          </g>
+          <g class="orbit-pt" transform="rotate(60 300 300)">
+            <g transform="translate(510 300)">
+              <circle r="5" fill="#f0b84a"/>
+              <text x="10" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#f0b84a" letter-spacing="1">SHARD-1</text>
+            </g>
+          </g>
+          <g class="orbit-pt" transform="rotate(200 300 300)">
+            <g transform="translate(510 300)">
+              <circle r="4" fill="#a8a0ff"/>
+              <text x="10" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#a8a0ff" letter-spacing="1">SHARD-2</text>
+            </g>
+          </g>
+          <g class="orbit-pt" transform="rotate(330 300 300)">
+            <g transform="translate(510 300)">
+              <circle r="4" fill="#a8a0ff" opacity="0.7"/>
+              <text x="10" y="3" font-family="JetBrains Mono" font-size="8.5" fill="#a8a0ff" letter-spacing="1">SHARD-3</text>
+            </g>
+          </g>
+        </g>
+
+        <!-- distant satellites -->
+        <g id="comet" transform="translate(560 90)">
+          <circle r="2.5" fill="#fff"/>
+          <line x1="0" y1="0" x2="-30" y2="14" stroke="#fff" stroke-opacity="0.4" stroke-width="1.5"/>
+        </g>
+
+        <!-- coordinate ticks -->
+        <g font-family="JetBrains Mono" font-size="8" fill="rgba(127,119,221,0.4)" letter-spacing="1">
+          <text x="14" y="306">−300</text>
+          <text x="556" y="306">+300</text>
+          <text x="288" y="14">+300</text>
+          <text x="288" y="592">−300</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- TRAILER -->
+<section class="trailer" id="trailer">
+  <div class="trailer-inner">
+    <span class="kicker" style="font-family:var(--font-m); font-size:10.5px; letter-spacing:0.2em; text-transform:uppercase; color:var(--violet); margin-bottom:18px; display:block;">▸ Trailer · v0.1</span>
+    <h3 style="font-family:var(--font-d); font-size:36px; line-height:1.1; color:var(--violet-ll); margin-bottom:24px;">See the verse in motion.</h3>
+    <div class="trailer-frame">
+      <video controls preload="metadata" playsinline poster="" style="width:100%; height:auto; display:block; border-radius:14px; background:#04020c;">
+        <source src="assets/bitroca-trailer.mp4" type="video/mp4" />
+        Your browser does not support embedded video. <a href="assets/bitroca-trailer.mp4">Download the trailer</a>.
+      </video>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="features-inner">
+    <div class="features-head">
+      <div>
+        <span class="kicker">▸ Systems · v0.1 demo build</span>
+        <h2>Six systems, <em>one universe.</em></h2>
+      </div>
+      <p class="lede">Every Bitroca system speaks the same on-chain language. Mine, build, trade, talk — every action is a verifiable transaction in a world that never stops.</p>
+    </div>
+
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="feat-head"><span class="id">01 · MINE</span><span>core</span></div>
+        <div class="feat-ico" data-pattern="pick">
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+        </div>
+        <h3>Mine &amp; forge<span class="note">proof-of-work blocks</span></h3>
+        <p>Crack the hash inside a forge block, claim the reward. FORGE tokens credited on-chain, in-game, instantly. The deeper you dig, the rarer the drop.</p>
+        <div class="feat-tag">▸ DEMO YIELD · 0 FORGE/min</div>
+      </div>
+
+      <div class="feat">
+        <div class="feat-head"><span class="id">02 · OWN</span><span>core</span></div>
+        <div class="feat-ico" data-pattern="world">
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+        </div>
+        <h3>Personal worlds<span class="note">200 × 100 plots</span></h3>
+        <p>Stake a claim, set the rules. Private build, public trade zone, PvP arena — your call. Friends list or public leaderboard. Your sector, your sky.</p>
+        <div class="feat-tag">▸ CLAIM SIZE · 200×100</div>
+      </div>
+
+      <div class="feat">
+        <div class="feat-head"><span class="id">03 · TRADE</span><span>economy</span></div>
+        <div class="feat-ico" data-pattern="market">
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+        </div>
+        <h3>The CIPHER market<span class="note">live order book</span></h3>
+        <p>Every resource has a price; every price moves. Trade FORGE, IRON, DIAM, GOLD and rare drops on the open exchange. Liquidity is a real skill.</p>
+        <div class="feat-tag">▸ DEMO VOL · $0 / 24h</div>
+      </div>
+
+      <div class="feat">
+        <div class="feat-head"><span class="id">04 · RUN</span><span>live</span></div>
+        <div class="feat-ico" data-pattern="server">
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+        </div>
+        <h3>Always online<span class="note">(during beta, wipes &amp; downtime can be expected)</span></h3>
+        <p>One persistent server. Your walls stay up when you log off. The world ages whether you're in it or not.</p>
+        <div class="feat-tag">▸ UPTIME · BETA</div>
+      </div>
+
+      <div class="feat">
+        <div class="feat-head"><span class="id">05 · BUILD</span><span>craft</span></div>
+        <div class="feat-ico" data-pattern="craft">
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+        </div>
+        <h3>Craft anything<span class="note">recipe-free building</span></h3>
+        <p>No recipe books. No tech tree. Stack blocks, wire circuits, design contraptions. If you can think it in voxels, you can ship it on the chain.</p>
+        <div class="feat-tag">▸ BLOCK TYPES · 64+</div>
+      </div>
+
+      <div class="feat">
+        <div class="feat-head"><span class="id">06 · TALK</span><span>social</span></div>
+        <div class="feat-ico" data-pattern="chat">
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+          <i></i><i></i><i></i><i></i>
+        </div>
+        <h3>Live in-game chat<span class="note">world &amp; trade broadcast</span></h3>
+        <p>World chat and trade broadcast. When someone strikes diamond at y=−48, everyone feels it on the ticker.</p>
+        <div class="feat-tag">▸ DEMO PEAK · <span id="s3">0</span> online</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA / LAUNCH -->
+<section class="cta" id="launch">
+  <div class="cta-inner">
+    <span class="kicker">▸ Open beta · play now</span>
+    <h2>The verse is <em>open.</em><br/>The launch pad is yours.</h2>
+    <p>Wishlist Bitroca on Steam, follow patch updates, and drop into open beta. No email, no waitlist. Just press play.</p>
+    <a class="btn-steam" href="https://store.steampowered.com/search/?term=bitroca" target="_blank" rel="noopener">
+      <span class="btn-steam-ico" aria-hidden="true">▶</span>
+      <span>View on Steam</span>
+      <span style="font-family:var(--font-m); font-size:14px; opacity:0.85;">↗</span>
+    </a>
+    <div class="cta-foot">▸ DEMO BUILD · v0.1 · Powered by hand &amp; one VPS at the edge of the void</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-brand">
+    <a href="#" class="logo">
+      <img src="assets/bitroca-logo.png" alt="Bitroca" />
+    </a>
+    <p>A persistent voxel world built by two people and one VPS. We ship every week, somewhere between Earth and the chain.</p>
+  </div>
+  <div>
+    <h6>Mission</h6>
+    <ul>
+      <li><a href="#hud">Telemetry</a></li>
+      <li><a href="#world">The World</a></li>
+      <li><a href="#features">Systems</a></li>
+    </ul>
+  </div>
+  <div>
+    <h6>Comms</h6>
+    <ul>
+      <li><a href="#">Discord</a></li>
+      <li><a href="#">X / Twitter</a></li>
+      <li><a href="#">YouTube</a></li>
+      <li><a href="#">GitHub</a></li>
+    </ul>
+  </div>
+  <div>
+    <h6>Legal</h6>
+    <ul>
+      <li><a href="privacy.html">Privacy</a></li>
+      <li><a href="#">Terms</a></li>
+      <li><a href="#">License</a></li>
+      <li><a href="#">Press</a></li>
+    </ul>
+  </div>
+  <div class="foot-bottom">
+    <span><span class="glyph"></span>BITROCA · OPEN BETA · DEMO MODE</span>
+    <span>SECTOR 0xB1 · TRANSMISSION FROM CORE-0</span>
+  </div>
+</footer>
+
+<script>
+/* ─── STARFIELD ─── */
+(function stars() {
+  const c = document.getElementById('stars');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  let w, h, dpr, layers;
+
+  function resize() {
+    dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+    w = c.clientWidth = window.innerWidth;
+    h = c.clientHeight = window.innerHeight;
+    c.width = w * dpr; c.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    seed();
+  }
+
+  function seed() {
+    layers = [
+      { count: 140, speed: 0.02, size: [0.4, 1.0], color: 'rgba(214,208,255,0.55)', stars: [] },
+      { count: 80,  speed: 0.05, size: [0.6, 1.4], color: 'rgba(168,160,255,0.85)', stars: [] },
+      { count: 30,  speed: 0.10, size: [1.0, 2.2], color: 'rgba(148,240,255,1)',    stars: [] },
+    ];
+    for (const L of layers) {
+      for (let i = 0; i < L.count; i++) {
+        L.stars.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: L.size[0] + Math.random() * (L.size[1] - L.size[0]),
+          tw: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+  }
+
+  let t = 0;
+  function frame() {
+    t += 1;
+    ctx.clearRect(0, 0, w, h);
+    for (const L of layers) {
+      ctx.fillStyle = L.color;
+      for (const s of L.stars) {
+        s.y += L.speed;
+        if (s.y > h) { s.y = 0; s.x = Math.random() * w; }
+        const a = 0.6 + 0.4 * Math.sin(t * 0.04 + s.tw);
+        ctx.globalAlpha = a;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+  frame();
+})();
+
+/* ─── TICKER ─── */
+(function ticker() {
+  const items = [
+    ['FORGE', '0.00', 'demo'],
+    ['CIPHER', '0.00', 'demo'],
+    ['IRON', '0.000', 'demo'],
+    ['COAL', '0.000', 'demo'],
+    ['GOLD', '0.00', 'demo'],
+    ['STONE', '0.000', 'demo'],
+    ['DIAM', '0.00', 'demo'],
+    ['NULL', '0.0', 'demo'],
+    ['SECTOR', '0xB1', 'live'],
+    ['BLOCK', '#0', 'genesis'],
+    ['NODES', '0', 'standby'],
+    ['UPTIME', 'BETA', 'live'],
+  ];
+  const track = document.getElementById('tickerTrack');
+  if (!track) return;
+  const html = items.map(([s, v, t]) =>
+    `<span class="ticker-item"><span class="sym">${s}</span> <b>${v}</b> <span style="color:var(--muted-2)">· ${t}</span></span>`
+  ).join(' ');
+  track.innerHTML = html + ' ' + html;
+})();
+
+/* ─── ORBITAL MOTION ─── */
+(function orbital() {
+  const group = document.getElementById('orbitGroup');
+  if (!group) return;
+  const items = group.querySelectorAll('.orbit-pt');
+  const speeds = [0.18, 0.12, 0.09, 0.07, 0.05, 0.04];
+  let frame = 0;
+  function tick() {
+    frame++;
+    items.forEach((el, i) => {
+      const base = parseFloat(el.dataset.base || el.getAttribute('transform').match(/rotate\((-?\d+(\.\d+)?)/)[1]);
+      el.dataset.base = base;
+      const angle = (base + frame * (speeds[i] || 0.05)) % 360;
+      el.setAttribute('transform', `rotate(${angle} 300 300)`);
+    });
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ─── COMET PULSE ─── */
+(function comet() {
+  const c = document.getElementById('comet');
+  if (!c) return;
+  let t = 0;
+  function tick() {
+    t += 1;
+    const x = 600 - ((t * 0.6) % 700);
+    const y = 80 + Math.sin(t * 0.005) * 40;
+    c.setAttribute('transform', `translate(${x} ${y})`);
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ─── LIVE STATS WIRER ─── */
+(function () {
+  "use strict";
+
+  var STATS_URL = "https://api.bitroca.com/stats.json";
+  var _els = null;
+  var _loggedLive = false;
+
+  function relTime(iso) {
+    if (!iso) return "—";
+    var secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+    if (secs < 60)    return "just now";
+    if (secs < 3600)  return Math.floor(secs / 60) + "m";
+    if (secs < 86400) return Math.floor(secs / 3600) + "h";
+    return Math.floor(secs / 86400) + "d";
+  }
+
+  function mountWirer() {
+    var ids = ["s1", "s2", "s3", "s4", "s6", "s7", "s8", "s9", "s10"];
+    var els = {};
+    var anyFound = false;
+    for (var i = 0; i < ids.length; i++) {
+      var el = document.getElementById(ids[i]);
+      if (el) { els[ids[i]] = el; anyFound = true; }
+      else    { console.warn("[bitroca-hud] missing element: " + ids[i]); }
+    }
+    if (!anyFound) { console.warn("[bitroca-hud] no HUD elements found"); return; }
+    _els = els;
+    fetchAndApply();
+    setInterval(fetchAndApply, 60000);
+  }
+
+  function fetchAndApply() {
+    // no-cache because nginx sends Cache-Control: max-age=3600 which would stale the HUD
+    fetch(STATS_URL, { cache: "no-cache" })
+      .then(function (res) { if (!res.ok) throw new Error("HTTP " + res.status); return res.json(); })
+      .then(function (data) {
+        var lfb = (data.last_forge_block) || null;
+        var e = _els;
+        if (e.s1) e.s1.textContent = "#" + Number(data.current_block || 0).toLocaleString();
+        if (e.s2) e.s2.textContent = Number(data.active_worlds || 0).toLocaleString();
+        if (e.s3) e.s3.textContent = Number(data.players_online || 0).toLocaleString();
+        if (e.s4) e.s4.textContent = (lfb && lfb.finder) || "—";
+        if (e.s5) e.s5.textContent = relTime((lfb && lfb.found_at) || null);
+        if (e.s6) e.s6.textContent = Number(data.locked_worlds || 0).toLocaleString();
+        if (e.s7) e.s7.textContent = Number(data.blocks_24h || 0).toLocaleString();
+        if (e.s8) e.s8.textContent = "#" + Number((lfb && lfb.block_number) || 0).toLocaleString();
+        if (e.s9) {
+          if (lfb && lfb.finder) {
+            e.s9.textContent = lfb.finder + " · world " + (lfb.world_name || "—");
+          } else {
+            e.s9.textContent = "Awaiting first forge block — be the first.";
+          }
+        }
+        if (e.s10) e.s10.textContent = relTime((lfb && lfb.found_at) || null);
+        if (!_loggedLive) { _loggedLive = true; console.info("[bitroca-hud] live"); }
+      })
+      .catch(function () {});
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", mountWirer);
+  } else {
+    mountWirer();
+  }
+})();
+</script>
+
+</body>
+</html>
