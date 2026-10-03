@@ -908,12 +908,12 @@ nav.top {
 .market { padding: 96px 28px; border-bottom: 1px solid var(--line); }
 .market-inner {
   max-width: 1400px; margin: 0 auto;
-  display: grid; grid-template-columns: 1fr;
-  gap: 32px;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 40px; align-items: center;
 }
-.market-copy h3 {
+.market-copy h2 {
   font-family: var(--font-d); font-weight: 700;
-  font-size: clamp(34px, 4.2vw, 50px);
+  font-size: clamp(28px, 4.2vw, 50px);
   letter-spacing: -0.03em; line-height: 1;
   color: var(--violet-ll); margin-bottom: 22px;
 }
@@ -932,42 +932,133 @@ nav.top {
 .market-stat .l { color: var(--muted); letter-spacing: 0.04em; }
 .market-stat .v { color: var(--violet-ll); font-weight: 500; }
 
-.chart-card {
-  border: 1px solid var(--line-2);
-  border-radius: 12px;
-  background: rgba(8, 5, 26, 0.55);
-  backdrop-filter: blur(6px);
+/* ─────────── COMMUNITY (screenshots + social links) ─────────── */
+.community { padding: 96px 28px; border-bottom: 1px solid var(--line); }
+.community-inner { max-width: 1400px; margin: 0 auto; }
+.community-head {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 40px; align-items: end; margin-bottom: 48px;
+}
+.community-head h2 {
+  font-family: var(--font-d); font-weight: 700;
+  font-size: clamp(40px, 6vw, 76px);
+  letter-spacing: -0.04em; line-height: 0.94;
+  color: var(--violet-ll);
+}
+.community-head h2 em { font-style: italic; color: var(--magenta); font-weight: 500; }
+.community-head .lede {
+  font-family: var(--font-m); font-size: 14px;
+  color: var(--muted); line-height: 1.75;
+  max-width: 480px; padding-bottom: 8px;
+}
+.community-grid {
+  display: grid; gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* screenshot wall: one big capture + four thumbnails */
+.shots {
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.shot {
+  display: flex; flex-direction: column; margin: 0;
+  background: var(--bg-1);
+  border: 1px solid var(--line-2); border-radius: 10px;
+  box-shadow: 4px 4px 0 var(--bg-3);
   overflow: hidden;
+  transition: transform .2s, box-shadow .2s, border-color .2s;
 }
-.chart-head {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 18px 22px; border-bottom: 1px solid var(--line);
+.shot:hover, .shot:focus-within {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--violet-d);
+  border-color: var(--line-3);
 }
-.chart-head .l {
-  font-family: var(--font-m); font-size: 10.5px;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--muted);
+.shot.big { grid-column: span 2; grid-row: span 2; }
+.shot a {
+  display: block; position: relative; flex: none;
+  background: var(--bg-0); line-height: 0;
 }
-.chart-head .l b { color: var(--violet-ll); font-weight: 600; margin-right: 8px; }
-.chart-head .tabs { display: flex; gap: 4px; }
-.chart-head .tab {
-  font-family: var(--font-m); font-size: 10px; font-weight: 600;
-  letter-spacing: 0.1em; padding: 5px 10px;
-  border: 1px solid var(--line); border-radius: 4px;
-  color: var(--muted);
+.shot a:focus-visible { outline: 2px solid var(--teal); outline-offset: -2px; }
+.shot:has(a:focus-visible) { outline: 2px solid var(--teal); outline-offset: 4px; }
+.shot img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+.shot.big a { flex: 1 1 auto; min-height: 0; }
+.shot.big img { position: absolute; inset: 0; height: 100%; aspect-ratio: auto; object-position: 58% 50%; }
+.shot figcaption {
+  padding: 12px 14px 14px;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-m); font-size: 12px;
+  color: var(--muted); line-height: 1.5;
 }
-.chart-head .tab.on {
-  color: var(--violet-ll); border-color: var(--line-3);
-  background: rgba(127, 119, 221, 0.08);
+.shot figcaption .tag {
+  display: block; margin-bottom: 4px;
+  font-size: 11px; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--violet);
 }
-.chart-body { padding: 16px; position: relative; }
-.chart-body svg { width: 100%; height: 280px; display: block; }
-.chart-axis {
-  position: absolute; left: 16px; right: 16px;
-  font-family: var(--font-m); font-size: 9px;
-  color: var(--muted-2); letter-spacing: 0.06em;
-  display: flex; justify-content: space-between;
-  bottom: 22px;
+.shot figcaption b { display: block; color: var(--violet-ll); font-weight: 500; font-size: 13px; }
+.shot.big figcaption { padding: 16px 18px 18px; }
+.shot.big figcaption b { font-size: 16px; }
+
+/* social rail */
+.social-rail { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 24px; }
+.social-card {
+  position: relative; padding: 24px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center; gap: 18px;
+  background: var(--bg-1);
+  border: 1px solid var(--line-2); border-radius: 12px;
+  box-shadow: 4px 4px 0 var(--bg-3);
+}
+.social-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(90deg, var(--magenta), var(--amber));
+}
+.social-card.steam::before { background: linear-gradient(90deg, var(--teal), var(--violet)); }
+.social-card .tag {
+  font-family: var(--font-m); font-size: 11px; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--violet); margin-bottom: 6px;
+}
+.social-ico {
+  width: 48px; height: 48px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 8px; color: var(--bg-0);
+  background: linear-gradient(135deg, var(--magenta), var(--amber));
+}
+.social-card.steam .social-ico { background: linear-gradient(135deg, var(--teal), var(--violet-l)); }
+.social-ico svg { width: 26px; height: 26px; display: block; }
+.social-card h3 {
+  font-family: var(--font-d); font-weight: 700;
+  font-size: 22px; letter-spacing: -0.02em; line-height: 1.1;
+  color: var(--violet-ll); margin-bottom: 4px; overflow-wrap: anywhere;
+}
+.social-card p {
+  font-family: var(--font-m); font-size: 12.5px;
+  color: var(--muted); line-height: 1.7; margin: 0;
+}
+.social-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 18px; border-radius: 6px; text-decoration: none;
+  font-family: var(--font-m); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--bg-0); background: var(--violet-l);
+  border: 1px solid var(--violet-ll);
+  box-shadow: 3px 3px 0 var(--violet-d);
+  transition: transform .15s, box-shadow .15s;
+}
+.social-btn:hover { transform: translate(-1px, -1px); box-shadow: 4px 4px 0 var(--violet-d); }
+.social-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.social-card.ig .social-btn { background: var(--amber); border-color: var(--amber); box-shadow: 3px 3px 0 #8a5c12; }
+.social-card.ig .social-btn:hover { box-shadow: 4px 4px 0 #8a5c12; }
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+html { scroll-padding-top: 120px; }
+footer a[target="_blank"] { display: inline-block; padding: 4px 0; }
+@media (prefers-reduced-motion: reduce) {
+  .shot, .social-btn { transition: none; }
+  .shot:hover, .shot:focus-within, .social-btn:hover { transform: none; }
 }
 
 /* ─────────── CTA ─────────── */
@@ -1142,6 +1233,7 @@ footer a:hover { color: var(--text); }
 
 /* ─────────── RESPONSIVE ─────────── */
 @media (max-width: 1180px) {
+  .social-rail { grid-template-columns: 1fr; }
   .hero-grid { grid-template-columns: 1fr; gap: 36px; }
   .voxel-chunk, .galaxy-stage { max-width: 600px; margin: 0 auto; }
 }
@@ -1150,6 +1242,9 @@ footer a:hover { color: var(--text); }
   .orbital-inner { grid-template-columns: 1fr; gap: 32px; }
   .market-inner { grid-template-columns: 1fr; gap: 28px; }
   .features-head { grid-template-columns: 1fr; gap: 18px; }
+  .community-head { grid-template-columns: 1fr; gap: 18px; }
+  .community-grid { grid-template-columns: 1fr; }
+  .nav-links a[href="#community"] { display: none; }
   .feat-grid { grid-template-columns: repeat(2, 1fr); }
   .hud-row { grid-template-columns: repeat(2, 1fr); }
   .hud-head { flex-direction: column; align-items: flex-start; }
@@ -1158,6 +1253,12 @@ footer a:hover { color: var(--text); }
 @media (max-width: 720px) {
   .hud-row { grid-template-columns: 1fr; }
   .feat-grid { grid-template-columns: 1fr; }
+  .shots { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .shot.big { grid-column: span 2; grid-row: auto; }
+  .shot.big a { aspect-ratio: 16 / 9; }
+  .shot figcaption { padding: 10px 11px 12px; font-size: 11.5px; }
+  .social-card { grid-template-columns: auto minmax(0, 1fr); }
+  .social-card .social-btn { grid-column: 1 / -1; justify-self: start; }
   .hero-meta { grid-template-columns: 1fr; }
   .hero-meta > div { border-right: none; border-bottom: 1px solid var(--line); }
   .nav-links { display: none; }
@@ -1213,6 +1314,7 @@ footer a:hover { color: var(--text); }
   </a>
   <div class="nav-links">
     <a href="#hud">▸ telemetry</a>
+    <a href="#community">▸ community</a>
     <a href="#world">▸ the verse</a>
     <a href="#features">▸ systems</a>
     <a href="#market">▸ market</a>
@@ -1223,6 +1325,7 @@ footer a:hover { color: var(--text); }
   </div>
 </nav>
 
+<main>
 <!-- HERO -->
 <section class="hero">
   <div class="hero-grid">
@@ -1354,6 +1457,81 @@ footer a:hover { color: var(--text); }
         <div class="lbl"><span class="dot"></span> Network signal · live</div>
         <div class="big"><span id="s3b">0</span></div>
         <div class="sub">Players online right now. Updates every 60 seconds.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMMUNITY -->
+<section class="community" id="community">
+  <div class="community-inner">
+    <div class="community-head">
+      <div>
+        <span class="kicker">▸ Community · the signal</span>
+        <h2>Follow the<br/><em>signal.</em></h2>
+      </div>
+      <p class="lede">Straight from the game, plus the places to follow it. Click a shot for the full-size capture.</p>
+    </div>
+
+    <div class="community-grid">
+      <div class="social-rail">
+        <div class="social-card ig">
+          <span class="social-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="0.6" fill="currentColor"/></svg></span>
+          <div class="social-text">
+            <div class="tag"><span aria-hidden="true">▸ </span>Instagram</div>
+            <h3>@bitroca_official</h3>
+            <p>Updates and screens from the void.</p>
+          </div>
+          <a class="social-btn" href="https://www.instagram.com/bitroca_official/" target="_blank" rel="noopener noreferrer">Follow on Instagram <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>
+        </div>
+
+        <div class="social-card steam">
+          <span class="social-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l12 7-12 7z"/></svg></span>
+          <div class="social-text">
+            <div class="tag"><span aria-hidden="true">▸ </span>Steam</div>
+            <h3>Bitroca on Steam</h3>
+            <p>The store page and game updates.</p>
+          </div>
+          <a class="social-btn" href="https://store.steampowered.com/app/4644600/BitRoca/" target="_blank" rel="noopener">View on Steam <span aria-hidden="true">↗</span><span class="sr-only"> (opens in a new tab)</span></a>
+        </div>
+      </div>
+
+      <div class="shots">
+        <figure class="shot big">
+          <a href="assets/community/forge-arrival-1280.webp" target="_blank" rel="noopener">
+            <img src="assets/community/forge-arrival-1280.webp" width="1280" height="720" loading="lazy" decoding="async" alt="Bitroca gameplay: a red miner stands on a Forge Block beside CIPHER, a lava-cracked rock trader, with a black hole behind them." />
+            <span class="sr-only">Open full-size capture (opens in a new tab)</span>
+          </a>
+          <figcaption><span class="tag"><span aria-hidden="true">▸ </span>In-game capture</span><b>Forge Block spawned.</b>CIPHER is watching.</figcaption>
+        </figure>
+        <figure class="shot">
+          <a href="assets/community/dig-down-1280.webp" target="_blank" rel="noopener">
+            <img src="assets/community/dig-down-640.webp" width="640" height="360" loading="lazy" decoding="async" alt="Bitroca gameplay: the red miner on grassy, ore-flecked ground under a galaxy sky, with a freshly dug shaft below." />
+            <span class="sr-only">Open full-size capture (opens in a new tab)</span>
+          </a>
+          <figcaption><span class="tag"><span aria-hidden="true">▸ </span>In-game capture</span><b>Dig down.</b>Break a block, go deeper.</figcaption>
+        </figure>
+        <figure class="shot">
+          <a href="assets/community/wardrobe-1280.webp" target="_blank" rel="noopener">
+            <img src="assets/community/wardrobe-640.webp" width="640" height="360" loading="lazy" decoding="async" alt="Bitroca Player Hub wardrobe: the red miner wearing a space helmet and holding a gold pickaxe." />
+            <span class="sr-only">Open full-size capture (opens in a new tab)</span>
+          </a>
+          <figcaption><span class="tag"><span aria-hidden="true">▸ </span>In-game capture</span><b>Suit up.</b>Hats and pickaxes, your look.</figcaption>
+        </figure>
+        <figure class="shot">
+          <a href="assets/community/cipher-exchange-1280.webp" target="_blank" rel="noopener">
+            <img src="assets/community/cipher-exchange-640.webp" width="640" height="360" loading="lazy" decoding="async" alt="Bitroca CIPHER player exchange showing sample diamond, ruby and gold listings from a test build." />
+            <span class="sr-only">Open full-size capture (opens in a new tab)</span>
+          </a>
+          <figcaption><span class="tag"><span aria-hidden="true">▸ </span>In-game capture</span><b>CIPHER exchange.</b>Sample listings, test build.</figcaption>
+        </figure>
+        <figure class="shot">
+          <a href="assets/community/first-steps-1280.webp" target="_blank" rel="noopener">
+            <img src="assets/community/first-steps-640.webp" width="640" height="360" loading="lazy" decoding="async" alt="Bitroca tutorial prompt telling a new miner to open the guide, shown over a starter plot." />
+            <span class="sr-only">Open full-size capture (opens in a new tab)</span>
+          </a>
+          <figcaption><span class="tag"><span aria-hidden="true">▸ </span>In-game capture</span><b>The guided start.</b>Learn the loop.</figcaption>
+        </figure>
       </div>
     </div>
   </div>
@@ -1530,9 +1708,9 @@ footer a:hover { color: var(--text); }
       <div class="feat">
         <div class="feat-head"><span class="id">03 · TRADE</span><span>economy</span></div>
         <div class="feat-ico" data-pattern="market"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <h3>The CIPHER market<span class="note">live order book</span></h3>
-        <p>Every resource has a price; every price moves. Trade FORGE, IRON, DIAM, GOLD and rare drops on the open exchange. Liquidity is a real skill.</p>
-        <div class="feat-tag">▸ DEMO VOL · $0 / 24h</div>
+        <h3>The CIPHER market<span class="note">player exchange</span></h3>
+        <p>Mine it, list it, sell it. Players set the prices, the cheapest offer fills first, and the server confirms every trade.</p>
+        <div class="feat-tag">▸ PLAYER-OWNED STOCK</div>
       </div>
 
       <div class="feat">
@@ -1567,16 +1745,23 @@ footer a:hover { color: var(--text); }
   <div class="market-inner">
     <div class="market-copy">
       <span class="kicker">▸ Market · CIPHER exchange</span>
-      <h3>Real prices.<br/>Real liquidity.<br/>Real consequences.</h3>
-      <p>FORGE/USD trades 24/7 on a transparent on-chain order book. The chart starts filling the moment the first forge block is mined in open beta.</p>
-      <div class="market-stats">
-        <div class="market-stat"><span class="l">FORGE / USD</span><span class="v">—</span></div>
-        <div class="market-stat"><span class="l">24h volume</span><span class="v">—</span></div>
-        <div class="market-stat"><span class="l">Open interest</span><span class="v">—</span></div>
-        <div class="market-stat"><span class="l">Active pairs</span><span class="v">—</span></div>
-      </div>
+      <h2>Player-owned stock.<br/>Server-verified trades.<br/>Cheapest fills first.</h2>
+      <p>CIPHER is the player exchange, open 24/7. List the blocks you mine, buy the ones you need, and convert between the in-game currencies FORGE, B and BB. Orders fill cheapest first, and the server confirms every trade.</p>
+      <dl class="market-stats">
+        <div class="market-stat"><dt class="l">Open</dt><dd class="v">24/7</dd></div>
+        <div class="market-stat"><dt class="l">Orders fill</dt><dd class="v">Cheapest first</dd></div>
+        <div class="market-stat"><dt class="l">Equal price</dt><dd class="v">Oldest listing first</dd></div>
+        <div class="market-stat"><dt class="l">Settlement</dt><dd class="v">Confirmed by the server</dd></div>
+      </dl>
     </div>
 
+    <figure class="shot">
+      <a href="assets/community/cipher-exchange-1280.webp" target="_blank" rel="noopener">
+        <img src="assets/community/cipher-exchange-1280.webp" srcset="assets/community/cipher-exchange-640.webp 640w, assets/community/cipher-exchange-1280.webp 1280w" sizes="(max-width: 1024px) 100vw, 660px" width="1280" height="720" loading="lazy" decoding="async" alt="Bitroca CIPHER player exchange showing sample diamond, ruby and gold listings from a test build." />
+        <span class="sr-only">Open full-size capture (opens in a new tab)</span>
+      </a>
+      <figcaption><span class="tag"><span aria-hidden="true">▸ </span>In-game capture</span><b>CIPHER exchange.</b>Sample listings, test build.</figcaption>
+    </figure>
   </div>
 </section>
 
@@ -1586,7 +1771,7 @@ footer a:hover { color: var(--text); }
     <span class="kicker">▸ Open beta · launch pad</span>
     <h2>The verse is <em>open.</em><br/>Be a miner.</h2>
     <p>Wishlist Bitroca on Steam, follow patch updates, drop into open beta. No email. No waitlist. Just press play.</p>
-    <a class="btn-steam" href="https://store.steampowered.com/search/?term=bitroca" target="_blank" rel="noopener">
+    <a class="btn-steam" href="https://store.steampowered.com/app/4644600/BitRoca/" target="_blank" rel="noopener">
       <span class="btn-steam-ico" aria-hidden="true">▶</span>
       <span>View on Steam</span>
       <span style="font-family:var(--font-m); font-size:14px; opacity:0.85;">↗</span>
@@ -1594,6 +1779,7 @@ footer a:hover { color: var(--text); }
     <div class="cta-foot">▸ Demo build · v0.1 · transmitting from the edge of the void</div>
   </div>
 </section>
+</main>
 
 <!-- FOOTER -->
 <footer>
@@ -1607,6 +1793,7 @@ footer a:hover { color: var(--text); }
     <h6>Mission</h6>
     <ul>
       <li><a href="#hud">Telemetry</a></li>
+      <li><a href="#community">Community</a></li>
       <li><a href="#world">The Verse</a></li>
       <li><a href="#features">Systems</a></li>
       <li><a href="#market">Market</a></li>
@@ -1615,6 +1802,7 @@ footer a:hover { color: var(--text); }
   <div>
     <h6>Comms</h6>
     <ul>
+      <li><a href="https://www.instagram.com/bitroca_official/" target="_blank" rel="noopener noreferrer">Instagram<span class="sr-only"> (opens in a new tab)</span></a></li>
       <li><a href="#">Discord</a></li>
       <li><a href="#">X / Twitter</a></li>
       <li><a href="#">YouTube</a></li>
